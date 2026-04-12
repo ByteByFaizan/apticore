@@ -41,11 +41,10 @@ export default function Header() {
 
         <div className="relative max-w-[1100px] mx-auto px-4">
           <nav
-            className={`flex items-center justify-between rounded-full border header-sticky px-6 py-2.5 ${
-              scrolled
+            className={`flex items-center justify-between rounded-full border header-sticky px-6 py-2.5 ${scrolled
                 ? "border-brand/6 header-scrolled shadow-[0_1px_8px_rgba(0,0,0,0.06)]"
                 : "border-brand/8 bg-white/60 backdrop-blur-sm shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
-            }`}
+              }`}
           >
             {/* Left: Brand + nav links */}
             <div className="flex items-center gap-8">
@@ -53,10 +52,10 @@ export default function Header() {
                 href="/"
                 className="inline-flex items-center gap-2.5 text-brand font-bold text-xl tracking-tight select-none font-display"
               >
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-accent flex items-center justify-center shadow-[0_2px_8px_rgba(14,165,233,0.25)]">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-accent flex items-center justify-center shadow-[0_2px_8px_rgba(91,160,143,0.25)]">
                   <span className="text-white text-xs font-extrabold">A</span>
                 </div>
-                AptiCore
+                <span className="font-[family-name:var(--font-lobster)] text-2xl">AptiCore</span>
               </Link>
               <div className="hidden md:flex items-center gap-6">
                 {navLinks.map((link) => (
@@ -103,19 +102,17 @@ export default function Header() {
 
       {/* ── Mobile Menu Overlay ── */}
       <div
-        className={`fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm md:hidden transition-opacity duration-300 ${
-          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
+        className={`fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm md:hidden transition-opacity duration-300 ${mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
         onClick={() => setMobileOpen(false)}
         aria-hidden="true"
       />
 
       {/* Slide-in panel */}
       <div
-        className={`fixed top-0 right-0 bottom-0 z-[70] w-[80%] max-w-[320px] md:hidden flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          mobileOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-        style={{ background: "linear-gradient(160deg, #1D3557 0%, #0F1D35 100%)" }}
+        className={`fixed top-0 right-0 bottom-0 z-[70] w-[80%] max-w-[320px] md:hidden flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${mobileOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        style={{ background: "linear-gradient(160deg, #1C3F3A 0%, #0F2924 100%)" }}
       >
         {/* Panel header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-5 border-b border-white/[0.07]">
@@ -127,7 +124,7 @@ export default function Header() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center shadow-lg shadow-accent/25">
               <span className="text-white text-xs font-extrabold">A</span>
             </div>
-            AptiCore
+            <span className="font-[family-name:var(--font-lobster)] text-xl">AptiCore</span>
           </Link>
           <button
             onClick={() => setMobileOpen(false)}

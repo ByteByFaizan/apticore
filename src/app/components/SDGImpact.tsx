@@ -50,7 +50,7 @@ export default function SDGImpact() {
           {sdgGoals.map((sdg, i) => (
             <RevealOnScroll key={sdg.number} delay={i * 120}>
               <div
-                className="group relative bg-white border border-edge/80 p-8 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-brand/15 hover:shadow-[0_12px_40px_rgba(29,53,87,0.07)] hover:-translate-y-1.5 cursor-default h-full overflow-hidden"
+                className="group relative bg-white border border-edge/80 p-8 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-brand/15 hover:shadow-[0_12px_40px_rgba(28,63,58,0.07)] hover:-translate-y-1.5 cursor-default h-full overflow-hidden"
                 onMouseEnter={() => setHoveredIndex(i)}
                 onMouseLeave={() => setHoveredIndex(null)}
               >
@@ -77,11 +77,10 @@ export default function SDGImpact() {
 
                 {/* Interactive stat on hover */}
                 <div
-                  className={`mt-4 pt-4 border-t border-edge/60 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10 ${
-                    hoveredIndex === i
+                  className={`mt-4 pt-4 border-t border-edge/60 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10 ${hoveredIndex === i
                       ? "opacity-100 translate-y-0 max-h-20"
                       : "opacity-0 translate-y-2 max-h-0 overflow-hidden pt-0 mt-0 border-t-0"
-                  }`}
+                    }`}
                 >
                   <div
                     className="text-xl font-extrabold font-display tracking-tight"

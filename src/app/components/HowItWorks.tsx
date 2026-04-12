@@ -92,17 +92,15 @@ export default function HowItWorks() {
                 <RevealOnScroll key={phase.title} delay={index * 100}>
                   <div
                     onClick={() => goTo(index)}
-                    className={`group relative p-6 flex flex-col gap-3 border cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden ${
-                      isActive
-                        ? "bg-white border-brand/20 shadow-[0_8px_30px_rgba(29,53,87,0.08)] -translate-y-1"
+                    className={`group relative p-6 flex flex-col gap-3 border cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden ${isActive
+                        ? "bg-white border-brand/20 shadow-[0_8px_30px_rgba(28,63,58,0.08)] -translate-y-1"
                         : "bg-surface/30 border-edge/80 hover:border-brand/10 hover:bg-white/80 hover:shadow-sm"
-                    }`}
+                      }`}
                   >
                     {/* Background glow */}
                     <div
-                      className={`absolute inset-0 bg-gradient-to-br from-brand/[0.02] to-transparent transition-opacity duration-500 ${
-                        isActive ? "opacity-100" : "opacity-0"
-                      }`}
+                      className={`absolute inset-0 bg-gradient-to-br from-brand/[0.02] to-transparent transition-opacity duration-500 ${isActive ? "opacity-100" : "opacity-0"
+                        }`}
                     />
 
                     {/* Progress bar */}
@@ -118,31 +116,28 @@ export default function HowItWorks() {
 
                     {/* Phase number */}
                     <span
-                      className={`absolute top-4 right-4 text-2xl font-extrabold font-display tracking-tighter transition-colors duration-500 ${
-                        isActive ? "text-brand/15" : "text-ink/5"
-                      }`}
+                      className={`absolute top-4 right-4 text-2xl font-extrabold font-display tracking-tighter transition-colors duration-500 ${isActive ? "text-brand/15" : "text-ink/5"
+                        }`}
                     >
                       {phase.number}
                     </span>
 
                     {/* Title */}
                     <h3
-                      className={`text-sm font-semibold leading-6 mt-1 transition-colors duration-300 relative z-10 ${
-                        isActive
+                      className={`text-sm font-semibold leading-6 mt-1 transition-colors duration-300 relative z-10 ${isActive
                           ? "text-ink"
                           : "text-ink/70 group-hover:text-ink"
-                      }`}
+                        }`}
                     >
                       {phase.title}
                     </h3>
 
                     {/* Description */}
                     <p
-                      className={`text-sm leading-[22px] transition-colors duration-300 relative z-10 ${
-                        isActive
+                      className={`text-sm leading-[22px] transition-colors duration-300 relative z-10 ${isActive
                           ? "text-ink-light/90"
                           : "text-ink-light/60 group-hover:text-ink-light/80"
-                      }`}
+                        }`}
                     >
                       {phase.description}
                     </p>
@@ -152,21 +147,19 @@ export default function HowItWorks() {
                       {phase.steps.map((step, si) => (
                         <li
                           key={si}
-                          className={`flex items-center gap-2 text-xs font-medium transition-all duration-300 ${
-                            isActive
+                          className={`flex items-center gap-2 text-xs font-medium transition-all duration-300 ${isActive
                               ? "text-ink-muted"
                               : "text-ink-faint group-hover:text-ink-muted"
-                          }`}
+                            }`}
                           style={{
                             transitionDelay: isActive ? `${si * 60}ms` : "0ms",
                           }}
                         >
                           <span
-                            className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-300 ${
-                              isActive
+                            className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-300 ${isActive
                                 ? "bg-accent scale-100"
                                 : "bg-ink-faint scale-75"
-                            }`}
+                              }`}
                           />
                           {step}
                         </li>
@@ -175,9 +168,8 @@ export default function HowItWorks() {
 
                     {/* Bottom accent line */}
                     <div
-                      className={`absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand to-accent transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-left ${
-                        isActive ? "scale-x-100" : "scale-x-0"
-                      }`}
+                      className={`absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand to-accent transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-left ${isActive ? "scale-x-100" : "scale-x-0"
+                        }`}
                     />
                   </div>
                 </RevealOnScroll>
@@ -187,7 +179,7 @@ export default function HowItWorks() {
 
           {/* Live preview panel */}
           <RevealOnScroll>
-            <div className="mt-6 p-6 bg-white border border-edge/60 shadow-[0_2px_12px_rgba(29,53,87,0.04)] overflow-hidden">
+            <div className="mt-6 p-6 bg-white border border-edge/60 shadow-[0_2px_12px_rgba(28,63,58,0.04)] overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-4">
                   {/* Animated indicator */}
@@ -219,11 +211,10 @@ export default function HowItWorks() {
                     <button
                       key={i}
                       onClick={() => goTo(i)}
-                      className={`transition-all duration-300 rounded-full ${
-                        active === i
+                      className={`transition-all duration-300 rounded-full ${active === i
                           ? "w-8 h-2 bg-brand"
                           : "w-2 h-2 bg-edge hover:bg-ink-faint"
-                      }`}
+                        }`}
                       aria-label={`Go to phase ${i + 1}`}
                     />
                   ))}

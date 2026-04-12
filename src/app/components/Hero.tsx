@@ -65,7 +65,7 @@ export default function Hero() {
           className="absolute top-20 right-10 w-48 h-48 opacity-[0.04]"
           style={{
             backgroundImage:
-              "radial-gradient(circle, #1D3557 1px, transparent 1px)",
+              "radial-gradient(circle, #1C3F3A 1px, transparent 1px)",
             backgroundSize: "16px 16px",
           }}
         />
@@ -73,7 +73,7 @@ export default function Hero() {
           className="absolute bottom-20 left-16 w-36 h-36 opacity-[0.03]"
           style={{
             backgroundImage:
-              "radial-gradient(circle, #1D3557 1px, transparent 1px)",
+              "radial-gradient(circle, #1C3F3A 1px, transparent 1px)",
             backgroundSize: "12px 12px",
           }}
         />
@@ -101,7 +101,7 @@ export default function Hero() {
             <div className="flex flex-wrap items-center gap-3 mt-8 animate-fade-in-up animation-delay-200">
               <a
                 href="#contact"
-                className="group relative h-12 px-8 bg-brand hover:bg-brand-dark text-white rounded-full font-semibold text-[15px] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] inline-flex items-center gap-2.5 shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] hover:shadow-[0_8px_24px_rgba(29,53,87,0.3),0_0_0_4px_rgba(29,53,87,0.1)] hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
+                className="group relative h-12 px-8 bg-brand hover:bg-brand-dark text-white rounded-full font-semibold text-[15px] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] inline-flex items-center gap-2.5 shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] hover:shadow-[0_8px_24px_rgba(28,63,58,0.3),0_0_0_4px_rgba(28,63,58,0.1)] hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                 <span className="relative z-10">Start Free Analysis</span>
@@ -164,7 +164,7 @@ export default function Hero() {
             ref={mockupRef}
             className="relative animate-fade-in-up animation-delay-300 max-w-[560px] mx-auto lg:mx-0"
           >
-            <div className="relative bg-surface-card border border-edge-light shadow-[0_4px_24px_rgba(29,53,87,0.06),0_20px_60px_rgba(29,53,87,0.08)] overflow-hidden animate-float-gentle">
+            <div className="relative bg-surface-card border border-edge-light shadow-[0_4px_24px_rgba(28,63,58,0.06),0_20px_60px_rgba(28,63,58,0.08)] overflow-hidden animate-float-gentle">
               {/* Browser chrome */}
               <div className="flex items-center gap-2 px-4 py-3 bg-surface-alt border-b border-edge-light">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />

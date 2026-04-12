@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, DM_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans, DM_Sans, Lobster } from "next/font/google";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -11,6 +11,13 @@ const plusJakarta = Plus_Jakarta_Sans({
 const dmSans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-dm-sans",
+  display: "swap",
+});
+
+const lobster = Lobster({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-lobster",
   display: "swap",
 });
 
@@ -44,7 +51,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${plusJakarta.variable} ${dmSans.variable} antialiased`}
+      className={`${plusJakarta.variable} ${dmSans.variable} ${lobster.variable} antialiased`}
     >
       <body className="font-body antialiased">{children}</body>
     </html>

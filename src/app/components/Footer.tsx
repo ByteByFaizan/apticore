@@ -28,7 +28,7 @@ export default function Footer() {
         <div className="grid gap-10 sm:grid-cols-4">
           {/* Brand */}
           <div className="sm:col-span-1">
-            <Link href="/" className="font-display text-lg font-bold text-ink tracking-tight">
+            <Link href="/" className="font-[family-name:var(--font-lobster)] text-2xl text-ink tracking-tight">
               AptiCore
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-ink-muted">

@@ -125,15 +125,15 @@ export default function Features() {
           {features.map((feature, i) => (
             <RevealOnScroll key={feature.title} delay={i * 100}>
               <TiltCard>
-                <div className="group p-6 border border-edge/80 bg-white h-full hover:border-brand/20 hover:shadow-[0_8px_30px_rgba(29,53,87,0.06)] relative overflow-hidden cursor-default">
+                <div className="group p-6 border border-edge/80 bg-white h-full hover:border-brand/20 hover:shadow-[0_8px_30px_rgba(28,63,58,0.06)] relative overflow-hidden cursor-default">
                   {/* Gradient overlay on hover */}
                   <div className="absolute inset-0 bg-gradient-to-br from-surface/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   {/* Spotlight glow following cursor */}
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-[radial-gradient(300px_circle_at_var(--mouse-x,50%)_var(--mouse-y,50%),rgba(14,165,233,0.04),transparent)]" />
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-[radial-gradient(300px_circle_at_var(--mouse-x,50%)_var(--mouse-y,50%),rgba(91,160,143,0.06),transparent)]" />
                   {/* Bottom accent line */}
                   <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand to-accent scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-left" />
 
-                  <div className="mb-4 inline-flex rounded-lg bg-surface-alt p-2.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:bg-brand group-hover:text-white group-hover:scale-110 group-hover:shadow-[0_4px_16px_rgba(29,53,87,0.2)] relative z-10 text-brand">
+                  <div className="mb-4 inline-flex rounded-lg bg-surface-alt p-2.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:bg-brand group-hover:text-white group-hover:scale-110 group-hover:shadow-[0_4px_16px_rgba(28,63,58,0.2)] relative z-10 text-brand">
                     <feature.icon />
                   </div>
                   <h3 className="text-ink text-sm font-semibold leading-6 relative z-10">

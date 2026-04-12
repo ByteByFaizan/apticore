@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Brand — Deep Royal Blue */
-  --color-brand: #1D3557;
-  --color-brand-dark: #152D4A;
+  /* Brand — Deep Forest Green */
+  --color-brand: #1C3F3A;
+  --color-brand-dark: #15302C;
 
-  /* Accent — Electric Teal */
-  --color-accent: #0EA5E9;
-  --color-accent-dark: #0284C7;
+  /* Accent — Sage Teal */
+  --color-accent: #5BA08F;
+  --color-accent-dark: #4A8A7A;
 
   /* Success — Emerald */
   --color-emerald: #10B981;
@@ -25,12 +25,13 @@
 
   /* Edges — Borders */
   --color-edge: #E2E8F0;
-  --color-edge-light: rgba(29, 53, 87, 0.08);
-  --color-edge-hover: rgba(29, 53, 87, 0.15);
+  --color-edge-light: rgba(28, 63, 58, 0.08);
+  --color-edge-hover: rgba(28, 63, 58, 0.15);
 
   /* Fonts */
   --font-display: var(--font-plus-jakarta);
   --font-body: var(--font-dm-sans);
+  --font-lobster: var(--font-lobster);
 }
 
 /* ─── Base ─── */
@@ -65,7 +66,7 @@ body {
 
 /* Selection */
 ::selection {
-  background-color: rgba(29, 53, 87, 0.12);
+  background-color: rgba(28, 63, 58, 0.12);
   color: var(--color-brand);
 }
 
@@ -91,6 +92,7 @@ body {
     opacity: 0;
     transform: translateY(24px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -98,8 +100,13 @@ body {
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fade-in-scale {
@@ -107,6 +114,7 @@ body {
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -114,20 +122,35 @@ body {
 }
 
 @keyframes float-gentle {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 @keyframes progress-bar {
-  from { width: 0%; }
-  to { width: 100%; }
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
+  }
 }
 
 @keyframes pulse-dot {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.7;
   }
+
   50% {
     transform: scale(1.4);
     opacity: 0.3;
@@ -135,14 +158,27 @@ body {
 }
 
 @keyframes scroll-logos {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 @keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @keyframes menu-slide-down {
@@ -150,6 +186,7 @@ body {
     opacity: 0;
     transform: translateY(-8px) scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -197,25 +234,48 @@ body {
 }
 
 /* ─── Stagger Delays ─── */
-.animation-delay-100 { animation-delay: 100ms; }
-.animation-delay-200 { animation-delay: 200ms; }
-.animation-delay-300 { animation-delay: 300ms; }
-.animation-delay-400 { animation-delay: 400ms; }
-.animation-delay-500 { animation-delay: 500ms; }
-.animation-delay-600 { animation-delay: 600ms; }
-.animation-delay-700 { animation-delay: 700ms; }
-.animation-delay-800 { animation-delay: 800ms; }
+.animation-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-300 {
+  animation-delay: 300ms;
+}
+
+.animation-delay-400 {
+  animation-delay: 400ms;
+}
+
+.animation-delay-500 {
+  animation-delay: 500ms;
+}
+
+.animation-delay-600 {
+  animation-delay: 600ms;
+}
+
+.animation-delay-700 {
+  animation-delay: 700ms;
+}
+
+.animation-delay-800 {
+  animation-delay: 800ms;
+}
 
 /* ─── Card Hover Utility ─── */
 .card-hover {
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.3s ease;
+    box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.3s ease;
 }
 
 .card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(29, 53, 87, 0.06);
+  box-shadow: 0 8px 30px rgba(28, 63, 58, 0.06);
 }
 
 /* ─── Sticky Header ─── */
