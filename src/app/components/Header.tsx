@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 
 const navLinks = [
-  { label: "How it works", href: "#how-it-works" },
-  { label: "Features", href: "#features" },
-  { label: "Impact", href: "#impact" },
-  { label: "Contact", href: "#contact" },
+  { label: "How it works", href: "/#how-it-works" },
+  { label: "Features", href: "/#features" },
+  { label: "Impact", href: "/#impact" },
+  { label: "About", href: "/about" },
 ];
 
 export default function Header() {
@@ -59,13 +59,13 @@ export default function Header() {
               </Link>
               <div className="hidden md:flex items-center gap-6">
                 {navLinks.map((link) => (
-                  <a
+                  <Link
                     key={link.href}
                     href={link.href}
                     className="text-brand/70 hover:text-brand text-sm font-medium transition-colors"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -140,7 +140,7 @@ export default function Header() {
         {/* Nav links */}
         <nav className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-1">
           {navLinks.map((link, i) => (
-            <a
+            <Link
               key={link.href}
               href={link.href}
               onClick={() => setMobileOpen(false)}
@@ -153,7 +153,7 @@ export default function Header() {
             >
               <span className="w-1.5 h-1.5 rounded-full bg-accent/60 flex-shrink-0" />
               {link.label}
-            </a>
+            </Link>
           ))}
 
           <div className="my-3 h-px bg-white/[0.07] mx-2" />
