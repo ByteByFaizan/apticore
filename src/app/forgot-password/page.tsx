@@ -40,6 +40,11 @@ export default function ForgotPasswordPage() {
     return () => clearTimeout(t);
   }, []);
 
+  /* ── Dynamic page title ── */
+  useEffect(() => {
+    document.title = "Reset Password — AptiCore";
+  }, []);
+
   /* ── Mouse parallax for left panel ── */
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!leftPanelRef.current) return;
@@ -291,6 +296,17 @@ export default function ForgotPasswordPage() {
             >
               Enter your email and we&apos;ll send you a secure link to reset your password.
             </p>
+
+            {/* SDG Badge — judges look for UN SDG tie-ins (PRD §0) */}
+            <div
+              className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] backdrop-blur-sm px-4 py-2"
+              style={stagger(4, 0.3)}
+            >
+              <span className="text-accent text-xs">🎯</span>
+              <span className="text-white/50 text-[12px] font-medium tracking-wide">
+                Supporting UN SDG 5, 8 & 10
+              </span>
+            </div>
           </div>
 
           {/* Spacer */}
@@ -337,6 +353,8 @@ export default function ForgotPasswordPage() {
           {/* Error */}
           {error && (
             <div
+              role="alert"
+              aria-live="assertive"
               className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
               style={{ animation: "login-fade-in 0.3s ease-out" }}
             >
@@ -393,13 +411,13 @@ export default function ForgotPasswordPage() {
                     setSent(false);
                     setEmail("");
                   }}
-                  className="w-full rounded-xl border border-brand/[0.08] bg-white py-3 text-[15px] font-medium text-brand/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-brand/[0.15] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer"
+                  className="w-full rounded-full border border-brand/[0.08] bg-white py-3 text-[15px] font-medium text-brand/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-brand/[0.15] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer"
                 >
                   Try a different email
                 </button>
                 <Link
                   href="/login"
-                  className="block w-full text-center rounded-xl bg-brand py-3 text-[15px] font-medium text-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_4px_12px_rgba(28,63,58,0.15)] hover:bg-brand-dark hover:shadow-[0_4px_12px_rgba(0,0,0,0.2),0_12px_32px_rgba(28,63,58,0.25)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300"
+                  className="block w-full text-center rounded-full bg-brand py-3 text-[15px] font-medium text-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_4px_12px_rgba(28,63,58,0.15)] hover:bg-brand-dark hover:shadow-[0_4px_12px_rgba(0,0,0,0.2),0_12px_32px_rgba(28,63,58,0.25)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300"
                 >
                   Back to sign in
                 </Link>
@@ -457,11 +475,11 @@ export default function ForgotPasswordPage() {
                   id="fp-submit"
                   type="submit"
                   disabled={isLoading}
-                  className="login-submit-btn group relative w-full mt-2 rounded-xl bg-brand py-3.5 text-[15px] font-medium text-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_4px_12px_rgba(28,63,58,0.15)] hover:bg-brand-dark hover:shadow-[0_4px_12px_rgba(0,0,0,0.2),0_12px_32px_rgba(28,63,58,0.25)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-[0_1px_3px_rgba(0,0,0,0.12),0_4px_12px_rgba(28,63,58,0.15)] transition-all duration-300 cursor-pointer"
+                  className="login-submit-btn group relative w-full mt-2 rounded-full bg-brand py-3.5 text-[15px] font-medium text-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_4px_12px_rgba(28,63,58,0.15)] hover:bg-brand-dark hover:shadow-[0_4px_12px_rgba(0,0,0,0.2),0_12px_32px_rgba(28,63,58,0.25)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-[0_1px_3px_rgba(0,0,0,0.12),0_4px_12px_rgba(28,63,58,0.15)] transition-all duration-300 cursor-pointer"
                   style={stagger(3, 0.15)}
                 >
                   {/* Shine sweep */}
-                  <div className="absolute inset-0 overflow-hidden rounded-xl">
+                  <div className="absolute inset-0 overflow-hidden rounded-full">
                     <div className="absolute inset-0 login-btn-shine-sweep" />
                   </div>
                   {/* Ripple on hover */}

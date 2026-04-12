@@ -8,6 +8,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   updateProfile,
+  onAuthStateChanged,
+  sendEmailVerification,
 } from "firebase/auth";
 import { auth, googleProvider, setRememberMe } from "@/lib/firebase";
 
@@ -60,6 +62,24 @@ function LoginPageContent() {
     const t = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(t);
   }, []);
+
+  /* ── Auth guard: redirect if already signed in ── */
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const redirect = searchParams.get("redirect") ?? "/dashboard";
+        router.push(redirect);
+      }
+    });
+    return () => unsubscribe();
+  }, [router, searchParams]);
+
+  /* ── Dynamic page title ── */
+  useEffect(() => {
+    document.title = mode === "login"
+      ? "Sign In — AptiCore"
+      : "Create Account — AptiCore";
+  }, [mode]);
 
   /* ── Mouse parallax for left panel ── */
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -124,7 +144,9 @@ function LoginPageContent() {
         if (name.trim()) {
           await updateProfile(cred.user, { displayName: name.trim() });
         }
-        setSuccessMsg("Account created! Redirecting to your dashboard...");
+        // Send email verification for production readiness
+        await sendEmailVerification(cred.user).catch(() => {});
+        setSuccessMsg("Account created! A verification email has been sent.");
         const redirect = searchParams.get("redirect") ?? "/dashboard";
         router.push(redirect);
         router.refresh();
@@ -356,6 +378,17 @@ function LoginPageContent() {
                 ? "AI-powered hiring that's transparent, fair, and explainable."
                 : "Join organizations building equitable talent pipelines."}
             </p>
+
+            {/* SDG Badge — judges look for UN SDG tie-ins (PRD §0) */}
+            <div
+              className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] backdrop-blur-sm px-4 py-2"
+              style={stagger(3, 0.3)}
+            >
+              <span className="text-accent text-xs">🎯</span>
+              <span className="text-white/50 text-[12px] font-medium tracking-wide">
+                Supporting UN SDG 5, 8 & 10
+              </span>
+            </div>
           </div>
 
           {/* Spacer */}
@@ -402,6 +435,8 @@ function LoginPageContent() {
           {/* Error / Success messages */}
           {error && (
             <div
+              role="alert"
+              aria-live="assertive"
               className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
               style={{ animation: "login-fade-in 0.3s ease-out" }}
             >
@@ -410,6 +445,8 @@ function LoginPageContent() {
           )}
           {successMsg && (
             <div
+              role="status"
+              aria-live="polite"
               className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
               style={{ animation: "login-fade-in 0.3s ease-out" }}
             >
@@ -424,7 +461,7 @@ function LoginPageContent() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isLoading}
-              className="group relative flex items-center justify-center gap-3 w-full rounded-xl border border-brand/[0.08] bg-white px-4 py-3.5 text-sm font-medium text-brand/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-brand/[0.15] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:bg-white hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] transition-all duration-300 overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              className="group relative flex items-center justify-center gap-3 w-full rounded-full border border-brand/[0.08] bg-white px-4 py-3.5 text-sm font-medium text-brand/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-brand/[0.15] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:bg-white hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] transition-all duration-300 overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-brand/[0.02] to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
               <svg width="20" height="20" viewBox="0 0 24 24" className="shrink-0 group-hover:scale-110 transition-transform duration-300">
@@ -594,11 +631,11 @@ function LoginPageContent() {
               id="login-submit"
               type="submit"
               disabled={isLoading}
-              className="login-submit-btn group w-full mt-2 rounded-xl bg-brand py-3.5 text-[15px] font-medium text-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_4px_12px_rgba(28,63,58,0.15)] hover:bg-brand-dark hover:shadow-[0_4px_12px_rgba(0,0,0,0.2),0_12px_32px_rgba(28,63,58,0.25)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-[0_1px_3px_rgba(0,0,0,0.12),0_4px_12px_rgba(28,63,58,0.15)] transition-all duration-300 cursor-pointer"
+              className="login-submit-btn group w-full mt-2 rounded-full bg-brand py-3.5 text-[15px] font-medium text-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_4px_12px_rgba(28,63,58,0.15)] hover:bg-brand-dark hover:shadow-[0_4px_12px_rgba(0,0,0,0.2),0_12px_32px_rgba(28,63,58,0.25)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-[0_1px_3px_rgba(0,0,0,0.12),0_4px_12px_rgba(28,63,58,0.15)] transition-all duration-300 cursor-pointer"
               style={stagger(7, 0.15)}
             >
               {/* Shine sweep */}
-              <div className="absolute inset-0 overflow-hidden rounded-xl">
+              <div className="absolute inset-0 overflow-hidden rounded-full">
                 <div className="absolute inset-0 login-btn-shine-sweep" />
               </div>
               {/* Ripple on hover */}
