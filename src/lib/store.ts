@@ -23,7 +23,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initialized: false,
 
   initAuth: () => {
-    set({ loading: true });
+    if (!get().initialized) {
+      set({ loading: true });
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       set({ user, loading: false, initialized: true });
     });

@@ -120,7 +120,6 @@ function LoginPageContent() {
       await signInWithPopup(auth, googleProvider);
       const redirect = searchParams.get("redirect") ?? "/dashboard";
       router.push(redirect);
-      router.refresh();
       return;
     } catch (err) {
       setError(getFirebaseError(err));
@@ -149,13 +148,11 @@ function LoginPageContent() {
         setSuccessMsg("Account created! A verification email has been sent.");
         const redirect = searchParams.get("redirect") ?? "/dashboard";
         router.push(redirect);
-        router.refresh();
         return;
       } else {
         await signInWithEmailAndPassword(auth, email, password);
         const redirect = searchParams.get("redirect") ?? "/dashboard";
         router.push(redirect);
-        router.refresh();
         return;
       }
     } catch (err) {
