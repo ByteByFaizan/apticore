@@ -100,7 +100,7 @@ export default function Hero() {
             {/* CTAs */}
             <div className="flex flex-wrap items-center gap-3 mt-8 animate-fade-in-up animation-delay-200">
               <a
-                href="#contact"
+                href="/dashboard"
                 className="group relative h-12 px-8 bg-brand hover:bg-brand-dark text-white rounded-full font-semibold text-[15px] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] inline-flex items-center gap-2.5 shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] hover:shadow-[0_8px_24px_rgba(28,63,58,0.3),0_0_0_4px_rgba(28,63,58,0.1)] hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />

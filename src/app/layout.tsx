@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, DM_Sans, Lobster } from "next/font/google";
 import "./globals.css";
+import AuthProvider from "./components/AuthProvider";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -53,7 +54,9 @@ export default function RootLayout({
       lang="en"
       className={`${plusJakarta.variable} ${dmSans.variable} ${lobster.variable} antialiased`}
     >
-      <body className="font-body antialiased">{children}</body>
+      <body className="font-body antialiased">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

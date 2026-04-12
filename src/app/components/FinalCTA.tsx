@@ -65,7 +65,7 @@ export default function FinalCTA() {
           </p>
           <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
             <a
-              href="#"
+              href="/dashboard"
               className="group inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-brand shadow-[0_2px_12px_rgba(0,0,0,0.12)] transition-all hover:scale-[1.03] active:scale-[0.98] hover:shadow-[0_4px_20px_rgba(0,0,0,0.2)] relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />

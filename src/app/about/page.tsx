@@ -343,7 +343,7 @@ export default function AboutPage() {
               </p>
               <div className="mt-10">
                 <a
-                  href="#contact"
+                  href="/dashboard"
                   className="group inline-flex items-center gap-2 rounded-full bg-brand px-8 py-3.5 text-sm font-medium text-white shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] transition-all hover:bg-brand-dark hover:scale-[1.02] hover:shadow-[0_8px_24px_rgba(28,63,58,0.3),0_0_0_4px_rgba(28,63,58,0.1)] active:scale-[0.98] relative overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />

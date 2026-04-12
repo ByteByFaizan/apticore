@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useAuthStore } from "@/lib/store";
+import { useRouter } from "next/navigation";
 
 const navLinks = [
   { label: "How it works", href: "/#how-it-works" },
@@ -13,6 +15,17 @@ const navLinks = [
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  
+  const { user, initialized, initAuth, logout } = useAuthStore();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  // Initialize auth state
+  useEffect(() => {
+    const unsubscribe = initAuth();
+    return () => unsubscribe();
+  }, [initAuth]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -30,6 +43,24 @@ export default function Header() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    setDropdownOpen(false);
+    setMobileOpen(false);
+    router.push("/");
+  };
 
   return (
     <>
@@ -72,18 +103,53 @@ export default function Header() {
 
             {/* Right: Auth buttons (desktop) */}
             <div className="hidden md:flex items-center gap-2.5">
-              <a
-                href="/login"
-                className="rounded-full border border-brand/10 bg-white px-5 py-1.5 text-sm font-medium text-brand shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-brand/[0.03] hover:shadow-[0_1px_4px_rgba(0,0,0,0.07)] transition-all"
-              >
-                Log in
-              </a>
-              <a
-                href="#contact"
+              <Link
+                href="/dashboard"
                 className="rounded-full bg-brand px-5 py-1.5 text-sm font-medium text-white shadow-[0_1px_3px_rgba(0,0,0,0.12)] hover:bg-brand-dark transition-all"
               >
-                Get Started
-              </a>
+                Dashboard
+              </Link>
+              {initialized && user ? (
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="flex items-center gap-2 rounded-full border border-brand/10 bg-white pl-2 pr-4 py-1.5 text-sm font-medium text-brand shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-brand/[0.03] hover:shadow-[0_1px_4px_rgba(0,0,0,0.07)] transition-all"
+                  >
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand text-white text-xs font-semibold">
+                      {user.displayName ? user.displayName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || "U"}
+                    </span>
+                    <span className="max-w-[120px] truncate">{user.displayName || user.email?.split("@")[0] || "User"}</span>
+                  </button>
+                  {dropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 rounded-xl border border-edge-light bg-white shadow-lg py-1 z-50 animate-fade-in-up">
+                      <div className="px-4 py-2 border-b border-edge-light">
+                        <p className="text-sm font-medium text-ink truncate">{user.displayName || user.email?.split("@")[0] || "User"}</p>
+                        <p className="text-xs text-ink-muted truncate">{user.email}</p>
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="group flex w-full items-center gap-2.5 px-4 py-2.5 text-[13.5px] font-medium text-ink-light bg-transparent hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+                      >
+                        <span className="flex items-center justify-center w-6 h-6 rounded-md bg-surface-alt group-hover:bg-red-100 transition-colors duration-200">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70 group-hover:opacity-100 transition-opacity">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                          </svg>
+                        </span>
+                        Log out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="rounded-full border border-brand/10 bg-white px-5 py-1.5 text-sm font-medium text-brand shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-brand/[0.03] hover:shadow-[0_1px_4px_rgba(0,0,0,0.07)] transition-all"
+                >
+                  Log in
+                </Link>
+              )}
             </div>
 
             {/* Mobile hamburger */}
@@ -158,19 +224,71 @@ export default function Header() {
 
           <div className="my-3 h-px bg-white/[0.07] mx-2" />
 
-          <a
-            href="#contact"
+          <Link
+            href="/dashboard"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-center gap-2 w-full mx-2 px-4 py-3 rounded-xl bg-gradient-to-r from-accent to-accent-dark text-white text-[15px] font-semibold shadow-lg shadow-accent/25 hover:opacity-90 transition-all active:scale-[0.98]"
+            className="flex items-center gap-3 mx-2 px-4 py-3 rounded-xl bg-white/[0.08] border border-white/[0.08] text-[15px] font-semibold text-white hover:bg-white/[0.13] transition-all duration-200 active:scale-[0.98]"
             style={{
               opacity: mobileOpen ? 1 : 0,
-              transform: mobileOpen ? "translateY(0)" : "translateY(8px)",
-              transition: "opacity 0.35s ease 0.25s, transform 0.4s cubic-bezier(0.16,1,0.3,1) 0.25s",
+              transform: mobileOpen ? "translateX(0)" : "translateX(16px)",
+              transition: `opacity 0.35s ease 0.25s, transform 0.4s cubic-bezier(0.16,1,0.3,1) 0.25s, background 0.2s`,
             }}
           >
-            Get Started
-          </a>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
+              <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            Dashboard
+          </Link>
         </nav>
+
+        {/* Bottom: Auth */}
+        <div className="px-4 pb-8 pt-3 border-t border-white/[0.07]">
+          {initialized && user ? (
+            <div
+              style={{
+                opacity: mobileOpen ? 1 : 0,
+                transition: "opacity 0.35s ease 0.3s",
+              }}
+            >
+              {/* User info */}
+              <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-xl bg-white/[0.05]">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-accent flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                  {user.displayName ? user.displayName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || "U"}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-white/90 text-sm font-semibold truncate">{user.displayName || user.email?.split("@")[0] || "User"}</p>
+                  <p className="text-white/40 text-[11px] truncate">{user.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="group flex w-full items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-medium text-white/60 hover:text-[#ef4444] hover:bg-[#ef4444]/[0.08] transition-all duration-200 active:scale-[0.98] overflow-hidden"
+              >
+                <span className="relative overflow-hidden flex items-center justify-center">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                </span>
+                Log out
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-gradient-to-r from-accent to-accent-dark text-white text-[15px] font-semibold shadow-lg shadow-accent/25 hover:opacity-90 transition-all active:scale-[0.98]"
+              style={{
+                opacity: mobileOpen ? 1 : 0,
+                transform: mobileOpen ? "translateY(0)" : "translateY(8px)",
+                transition: "opacity 0.35s ease 0.3s, transform 0.4s cubic-bezier(0.16,1,0.3,1) 0.3s",
+              }}
+            >
+              Log in to AptiCore
+            </Link>
+          )}
+        </div>
       </div>
     </>
   );
