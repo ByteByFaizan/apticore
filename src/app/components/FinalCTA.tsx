@@ -84,19 +84,6 @@ export default function FinalCTA() {
                 />
               </svg>
             </a>
-            <a
-              href="#"
-              className="inline-flex items-center gap-2 rounded-full border border-white/30 px-8 py-3.5 text-sm font-medium text-white hover:border-white/60 hover:bg-white/[0.08] transition-all"
-            >
-              <svg
-                className="h-4 w-4"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
-              Book a Demo
-            </a>
           </div>
         </RevealOnScroll>
       </div>

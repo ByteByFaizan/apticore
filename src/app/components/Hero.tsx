@@ -119,16 +119,6 @@ export default function Hero() {
                   />
                 </svg>
               </a>
-              <button className="group h-12 px-6 rounded-full border border-brand/10 bg-white text-brand text-[15px] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-brand/20 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] transition-all inline-flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]">
-                <svg
-                  className="h-4 w-4 transition-transform duration-300 group-hover:scale-110"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <polygon points="5 3 19 12 5 21 5 3" />
-                </svg>
-                Watch Demo
-              </button>
             </div>
 
             <p className="mt-3 text-ink-faint text-sm font-medium animate-fade-in-up animation-delay-300">
