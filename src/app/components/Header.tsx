@@ -42,8 +42,8 @@ export default function Header() {
         <div className="relative max-w-[1100px] mx-auto px-4">
           <nav
             className={`flex items-center justify-between rounded-full border header-sticky px-6 py-2.5 ${scrolled
-                ? "border-brand/6 header-scrolled shadow-[0_1px_8px_rgba(0,0,0,0.06)]"
-                : "border-brand/8 bg-white/60 backdrop-blur-sm shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+                ? "border-brand/6 bg-white shadow-[0_1px_8px_rgba(0,0,0,0.06)]"
+                : "border-brand/8 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
               }`}
           >
             {/* Left: Brand + nav links */}
