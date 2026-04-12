@@ -1,0 +1,50 @@
+docs/
+.agents/
+
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment Variables (Security)
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel
+
+# Python (AI/ML Backend)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+.venv/
+env/
+.env_python/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+*.egg-info/
+
+# Google Cloud
+*-credentials.json
+*.json.key
