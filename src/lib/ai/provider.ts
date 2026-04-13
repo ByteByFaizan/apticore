@@ -21,8 +21,14 @@ export function getAIProvider(): IAIProvider {
 }
 
 // ── Gemini Provider ──
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type GenAIModule = any;
+
 class GeminiProvider implements IAIProvider {
   private apiKey: string;
+  // [js-cache-function-results] Cache SDK + model instances across calls
+  private genAIInstance: GenAIModule | null = null;
+  private sdkModule: GenAIModule | null = null;
 
   constructor() {
     this.apiKey = process.env.GOOGLE_GEMINI_API_KEY || "";
@@ -31,9 +37,18 @@ class GeminiProvider implements IAIProvider {
     }
   }
 
+  private async getSDK(): Promise<GenAIModule> {
+    if (!this.sdkModule) {
+      this.sdkModule = await import("@google/generative-ai");
+    }
+    if (!this.genAIInstance) {
+      this.genAIInstance = new this.sdkModule.GoogleGenerativeAI(this.apiKey);
+    }
+    return this.genAIInstance;
+  }
+
   async complete(options: AICompletionOptions): Promise<AICompletionResult> {
-    const { GoogleGenerativeAI } = await import("@google/generative-ai");
-    const genAI = new GoogleGenerativeAI(this.apiKey);
+    const genAI = await this.getSDK();
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-pro",
       generationConfig: {
@@ -79,16 +94,17 @@ class GeminiProvider implements IAIProvider {
     };
   }
 
+  // [async-parallel] Parallelize embedding calls
   async generateEmbeddings(texts: string[]): Promise<number[][]> {
-    const { GoogleGenerativeAI } = await import("@google/generative-ai");
-    const genAI = new GoogleGenerativeAI(this.apiKey);
+    const genAI = await this.getSDK();
     const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
 
-    const results: number[][] = [];
-    for (const text of texts) {
-      const result = await model.embedContent(text);
-      results.push(result.embedding.values);
-    }
+    const results = await Promise.all(
+      texts.map(async (text) => {
+        const result = await model.embedContent(text);
+        return result.embedding.values;
+      })
+    );
 
     return results;
   }

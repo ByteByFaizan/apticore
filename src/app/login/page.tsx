@@ -50,6 +50,7 @@ function LoginPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [formTilt, setFormTilt] = useState({ x: 0, y: 0 });
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -67,6 +68,11 @@ function LoginPageContent() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
+        if (!user.emailVerified) {
+          // If unverified, ensure they are signed out from persistent session
+          auth.signOut().catch(() => {});
+          return;
+        }
         const redirect = searchParams.get("redirect") ?? "/dashboard";
         router.push(redirect);
       }
@@ -143,14 +149,19 @@ function LoginPageContent() {
         if (name.trim()) {
           await updateProfile(cred.user, { displayName: name.trim() });
         }
-        // Send email verification for production readiness
+        // Send email verification and sign out immediately
         await sendEmailVerification(cred.user).catch(() => {});
-        setSuccessMsg("Account created! A verification email has been sent.");
-        const redirect = searchParams.get("redirect") ?? "/dashboard";
-        router.push(redirect);
+        await auth.signOut();
+        setShowVerifyModal(true);
+        // We do not switch to login yet, wait for user to close modal
         return;
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        if (!cred.user.emailVerified) {
+          await auth.signOut();
+          setError("Please verify your email address before signing in. Check your inbox.");
+          return;
+        }
         const redirect = searchParams.get("redirect") ?? "/dashboard";
         router.push(redirect);
         return;
@@ -681,6 +692,39 @@ function LoginPageContent() {
           </p>
         </div>
       </div>
+
+      {/* ════════════════════════ VERIFY EMAIL MODAL ════════════════════════ */}
+      {showVerifyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" />
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center"
+            style={{ animation: "login-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}
+          >
+            <div className="w-16 h-16 bg-brand/5 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand">
+                <path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                <path d="m16 19 2 2 4-4" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-display font-bold text-ink mb-2">Check your email</h3>
+            <p className="text-ink-muted text-sm leading-relaxed mb-8">
+              We just sent a verification link to <strong className="text-ink">{email}</strong>. 
+              Please verify your email address to sign in.
+            </p>
+            <button
+              onClick={() => {
+                setShowVerifyModal(false);
+                setMode("login");
+              }}
+              className="w-full rounded-full bg-brand py-3 text-sm font-medium text-white hover:bg-brand-dark transition-colors duration-300"
+            >
+              Back to Sign In
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

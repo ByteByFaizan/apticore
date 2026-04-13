@@ -36,12 +36,18 @@ export default function AuthProvider({
     const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
     const isAuthRoute = AUTH_ROUTES.some((r) => pathname.startsWith(r));
 
-    if (isProtected && !user) {
-      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+    if (isProtected) {
+      if (!user || !user.emailVerified) {
+        // Enforce email verification for dashboard
+        router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      }
     }
 
-    if (isAuthRoute && user) {
-      router.push("/dashboard");
+    if (isAuthRoute) {
+      if (user && user.emailVerified) {
+        // Only auto-redirect verified users to dashboard
+        router.push("/dashboard");
+      }
     }
   }, [user, loading, initialized, pathname, router]);
 

@@ -43,34 +43,36 @@ export function anonymizeBatch(candidates: CandidateRawData[]): AnonymizedCandid
 /**
  * Extract highest education level (degree only, no institution).
  */
+// [js-cache-property-access] Hoist education levels + entries at module level
+const EDUCATION_LEVELS: Record<string, number> = {
+  phd: 4,
+  doctorate: 4,
+  "ph.d": 4,
+  masters: 3,
+  "master's": 3,
+  "m.tech": 3,
+  "m.s": 3,
+  mba: 3,
+  "m.sc": 3,
+  bachelors: 2,
+  "bachelor's": 2,
+  "b.tech": 2,
+  "b.e": 2,
+  "b.s": 2,
+  "b.sc": 2,
+  diploma: 1,
+  certificate: 1,
+};
+const EDUCATION_ENTRIES = Object.entries(EDUCATION_LEVELS);
+
 function extractEducationLevel(education: CandidateRawData["education"]): string {
   if (!education.length) return "Unknown";
-
-  const levels: Record<string, number> = {
-    phd: 4,
-    doctorate: 4,
-    "ph.d": 4,
-    masters: 3,
-    "master's": 3,
-    "m.tech": 3,
-    "m.s": 3,
-    mba: 3,
-    "m.sc": 3,
-    bachelors: 2,
-    "bachelor's": 2,
-    "b.tech": 2,
-    "b.e": 2,
-    "b.s": 2,
-    "b.sc": 2,
-    diploma: 1,
-    certificate: 1,
-  };
 
   let highest = { level: 0, degree: "Unknown" };
 
   for (const edu of education) {
     const degreeLower = edu.degree.toLowerCase();
-    for (const [key, level] of Object.entries(levels)) {
+    for (const [key, level] of EDUCATION_ENTRIES) {
       if (degreeLower.includes(key) && level > highest.level) {
         highest = { level, degree: edu.degree };
       }
@@ -80,19 +82,22 @@ function extractEducationLevel(education: CandidateRawData["education"]): string
   return highest.degree;
 }
 
-// [js-hoist-regexp] Hoist RegExp creation outside function for reuse
-const EMAIL_REGEX = /[\w._%+-]+@[\w.-]+\.[a-zA-Z]{2,}/g;
-const PHONE_REGEX = /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
-const URL_REGEX = /https?:\/\/[^\s]+/g;
-const LINKEDIN_REGEX = /linkedin\.com\/in\/[^\s]+/gi;
-const GITHUB_REGEX = /github\.com\/[^\s]+/gi;
-const PRONOUN_REGEX = /\b(he|she|his|her|him)\b/gi;
-const COLLEGE_PATTERNS = [
-  /\b(IIT|NIT|IIIT|BITS|ISI)\s*[-]?\s*\w+/gi,
-  /Indian Institute of Technology/gi,
-  /National Institute of Technology/gi,
-  /Indian Institute of Information Technology/gi,
-  /Birla Institute/gi,
+// [js-hoist-regexp] Hoist RegExp patterns at module level.
+// IMPORTANT: Using factory functions instead of module-level /g regex.
+// RegExp with /g flag is STATEFUL (lastIndex persists between calls),
+// causing intermittent match failures and PII leaks.
+const PII_PATTERNS: Array<{ pattern: () => RegExp; replacement: string }> = [
+  { pattern: () => /[\w._%+-]+@[\w.-]+\.[a-zA-Z]{2,}/g, replacement: "[EMAIL]" },
+  { pattern: () => /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, replacement: "[PHONE]" },
+  { pattern: () => /https?:\/\/[^\s]+/g, replacement: "[URL]" },
+  { pattern: () => /linkedin\.com\/in\/[^\s]+/gi, replacement: "[LINKEDIN]" },
+  { pattern: () => /github\.com\/[^\s]+/gi, replacement: "[GITHUB]" },
+  { pattern: () => /\b(IIT|NIT|IIIT|BITS|ISI)\s*[-]?\s*\w+/gi, replacement: "[INSTITUTION]" },
+  { pattern: () => /Indian Institute of Technology/gi, replacement: "[INSTITUTION]" },
+  { pattern: () => /National Institute of Technology/gi, replacement: "[INSTITUTION]" },
+  { pattern: () => /Indian Institute of Information Technology/gi, replacement: "[INSTITUTION]" },
+  { pattern: () => /Birla Institute/gi, replacement: "[INSTITUTION]" },
+  { pattern: () => /\b(he|she|his|her|him)\b/gi, replacement: "they" },
 ];
 
 /**
@@ -104,28 +109,10 @@ function scrubPII(text: string): string {
 
   let scrubbed = text;
 
-  // Remove email addresses
-  scrubbed = scrubbed.replace(EMAIL_REGEX, "[EMAIL]");
-
-  // Remove phone numbers
-  scrubbed = scrubbed.replace(PHONE_REGEX, "[PHONE]");
-
-  // Remove URLs
-  scrubbed = scrubbed.replace(URL_REGEX, "[URL]");
-
-  // Remove LinkedIn profiles
-  scrubbed = scrubbed.replace(LINKEDIN_REGEX, "[LINKEDIN]");
-
-  // Remove GitHub profiles
-  scrubbed = scrubbed.replace(GITHUB_REGEX, "[GITHUB]");
-
-  // Common Indian college names (bias-triggering)
-  for (const pattern of COLLEGE_PATTERNS) {
-    scrubbed = scrubbed.replace(pattern, "[INSTITUTION]");
+  // Each call creates fresh regex instances (safe /g usage)
+  for (const { pattern, replacement } of PII_PATTERNS) {
+    scrubbed = scrubbed.replace(pattern(), replacement);
   }
-
-  // Remove gender pronouns that could indicate gender
-  scrubbed = scrubbed.replace(PRONOUN_REGEX, "they");
 
   return scrubbed;
 }

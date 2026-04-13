@@ -12,8 +12,11 @@ export async function GET(
   { params }: { params: Promise<{ batchId: string }> }
 ) {
   try {
-    const user = await verifyAuth(request);
-    const { batchId } = await params;
+    // [async-api-routes] Start auth + params resolution in parallel
+    const [user, { batchId }] = await Promise.all([
+      verifyAuth(request),
+      params,
+    ]);
 
     // Verify batch ownership
     const batch = await getJobBatch(batchId);

@@ -88,41 +88,55 @@ async function processInBackground(batchId: string, jdText: string) {
     .collection("resumeFiles")
     .get();
 
-  const candidates: CandidateRawData[] = [];
-  const parseErrors: { fileName: string; error: string }[] = [];
-
-  for (const doc of resumeDocs.docs) {
-    const data = doc.data();
-    try {
+  // [async-parallel] Parse all resumes in parallel instead of sequential
+  const parseResults = await Promise.allSettled(
+    resumeDocs.docs.map(async (doc) => {
+      const data = doc.data();
       const buffer = Buffer.from(data.contentBase64, "base64");
       const extracted = await extractText(buffer);
 
       if (extracted.status === "PARSE_FAILED" || extracted.status === "NEEDS_OCR") {
-        parseErrors.push({
+        return {
+          type: "error" as const,
           fileName: data.fileName,
           error: extracted.error || "Failed to extract text",
-        });
-        // Create a placeholder candidate for tracking
-        candidates.push({
-          name: data.fileName,
-          college: "Unknown",
-          location: "Unknown",
-          skills: [],
-          experienceYears: 0,
-          experience: [],
-          projects: [],
-          education: [],
-        });
-        continue;
+          // Placeholder candidate for tracking
+          candidate: {
+            name: data.fileName,
+            college: "Unknown",
+            location: "Unknown",
+            skills: [],
+            experienceYears: 0,
+            experience: [],
+            projects: [],
+            education: [],
+          } as CandidateRawData,
+        };
       }
 
-      // Parse with AI
       const parsed = await parseResume(extracted.text);
-      candidates.push(parsed);
-    } catch (err) {
+      return { type: "success" as const, candidate: parsed };
+    })
+  );
+
+  // [js-combine-iterations] Collect candidates + errors in single pass
+  const candidates: CandidateRawData[] = [];
+  const parseErrors: { fileName: string; error: string }[] = [];
+
+  for (const result of parseResults) {
+    if (result.status === "fulfilled") {
+      candidates.push(result.value.candidate);
+      if (result.value.type === "error") {
+        parseErrors.push({
+          fileName: result.value.fileName,
+          error: result.value.error,
+        });
+      }
+    } else {
+      // Promise itself rejected (unexpected)
       parseErrors.push({
-        fileName: data.fileName,
-        error: err instanceof Error ? err.message : "Unknown error",
+        fileName: "unknown",
+        error: result.reason instanceof Error ? result.reason.message : "Unknown error",
       });
     }
   }

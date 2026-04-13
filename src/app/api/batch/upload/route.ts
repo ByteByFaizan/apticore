@@ -4,7 +4,7 @@
    Stores in Firebase Storage, records metadata in Firestore
    ═══════════════════════════════════════════════ */
 
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { verifyAuth, authErrorResponse, verifyOwnership } from "@/lib/auth";
 import { getJobBatch, updateBatchStatus } from "@/lib/firestore";
 import { MAX_FILE_SIZE, ALLOWED_EXTENSIONS } from "@/lib/pdf-parser";
@@ -72,8 +72,8 @@ export async function POST(request: NextRequest) {
         uploadedAt: new Date().toISOString(),
       });
 
-    // Update batch status
-    await updateBatchStatus(batchId, "UPLOADING");
+    // [server-after-nonblocking] Update batch status after response sent
+    after(() => updateBatchStatus(batchId, "UPLOADING").catch(() => {}));
 
     return Response.json({
       message: "File uploaded successfully",

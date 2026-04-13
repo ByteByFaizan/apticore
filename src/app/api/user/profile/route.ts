@@ -38,8 +38,11 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const user = await verifyAuth(request);
-    const body = await request.json();
+    // [async-api-routes] Start auth + body parse in parallel
+    const [user, body] = await Promise.all([
+      verifyAuth(request),
+      request.json(),
+    ]);
 
     // Only allow updating specific fields
     const allowedFields = ["displayName", "company", "role"];

@@ -77,14 +77,16 @@ function isSkillMatched(requiredSkill: string, candidateSkills: string[], skillS
   // [js-set-map-lookups] O(1) exact match first
   if (skillSet.has(req)) return true;
 
-  return candidateSkills.some((cs) => {
-    // Substring match (e.g., "react" matches "react.js")
-    if (cs.includes(req) || req.includes(cs)) return true;
-    // Common aliases
-    if (SKILL_ALIASES[req]?.some((alias) => cs.includes(alias))) return true;
-    if (SKILL_ALIASES[cs]?.some((alias) => req.includes(alias))) return true;
-    return false;
-  });
+  // [js-set-map-lookups] Check aliases via reverse map (O(1) Set lookup)
+  const reqAliases = REVERSE_ALIAS_MAP.get(req);
+  if (reqAliases) {
+    for (const alias of reqAliases) {
+      if (skillSet.has(alias)) return true;
+    }
+  }
+
+  // Substring match fallback (e.g., "react" matches "react.js")
+  return candidateSkills.some((cs) => cs.includes(req) || req.includes(cs));
 }
 
 /**
@@ -96,9 +98,17 @@ function calculateConfidence(requiredSkill: string, candidateSkills: string[], s
   // [js-set-map-lookups] O(1) exact match check
   if (skillSet.has(req)) return 1.0;
 
+  // [js-set-map-lookups] O(1) alias check via reverse map
+  const reqAliases = REVERSE_ALIAS_MAP.get(req);
+  if (reqAliases) {
+    for (const alias of reqAliases) {
+      if (skillSet.has(alias)) return 0.75; // Alias match
+    }
+  }
+
+  // Substring fallback
   for (const cs of candidateSkills) {
-    if (cs.includes(req) || req.includes(cs)) return 0.85; // Substring
-    if (SKILL_ALIASES[req]?.some((alias) => cs.includes(alias))) return 0.75; // Alias
+    if (cs.includes(req) || req.includes(cs)) return 0.85;
   }
 
   return 0;
@@ -145,6 +155,29 @@ const SKILL_ALIASES: Record<string, string[]> = {
   flutter: ["dart"],
   "react native": ["rn"],
 };
+
+// [js-set-map-lookups] Build reverse alias map once for O(1) bidirectional lookup
+// Maps each alias back to its canonical skill AND maps canonical to its alias set
+const REVERSE_ALIAS_MAP = new Map<string, Set<string>>();
+for (const [canonical, aliases] of Object.entries(SKILL_ALIASES)) {
+  // canonical → aliases
+  if (!REVERSE_ALIAS_MAP.has(canonical)) {
+    REVERSE_ALIAS_MAP.set(canonical, new Set(aliases));
+  }
+  // alias → canonical (store all related terms together)
+  for (const alias of aliases) {
+    if (!REVERSE_ALIAS_MAP.has(alias)) {
+      REVERSE_ALIAS_MAP.set(alias, new Set());
+    }
+    REVERSE_ALIAS_MAP.get(alias)!.add(canonical);
+    // Also add sibling aliases
+    for (const sibling of aliases) {
+      if (sibling !== alias) {
+        REVERSE_ALIAS_MAP.get(alias)!.add(sibling);
+      }
+    }
+  }
+}
 
 /**
  * Rank all candidates by match score.

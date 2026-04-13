@@ -151,18 +151,25 @@ export async function getCandidateResults(batchId: string): Promise<CandidateRes
 // ── Bias Report Operations ──
 
 export async function saveBiasReport(report: BiasReport): Promise<void> {
-  await adminDb
+  // [async-parallel] Batch both writes into single atomic operation
+  const writeBatch = adminDb.batch();
+
+  const reportRef = adminDb
     .collection("jobBatches")
     .doc(report.batchId)
     .collection("biasReport")
-    .doc("report")
-    .set(report);
+    .doc("report");
+
+  writeBatch.set(reportRef, report);
 
   // Also update batch with fairness scores for quick access
-  await adminDb.collection("jobBatches").doc(report.batchId).update({
+  const batchRef = adminDb.collection("jobBatches").doc(report.batchId);
+  writeBatch.update(batchRef, {
     fairnessScoreBefore: report.before.fairnessScore,
     fairnessScoreAfter: report.after.fairnessScore,
   });
+
+  await writeBatch.commit();
 }
 
 export async function getBiasReport(batchId: string): Promise<BiasReport | null> {

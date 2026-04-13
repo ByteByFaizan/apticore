@@ -51,14 +51,16 @@ export function detectBiasAfter(
   originalCandidates: CandidateRawData[],
   rankedResults: CandidateResult[]
 ): BiasMetrics {
-  // Map ranked results back to original candidate data
-  // After anonymization + ranking, check if top selections are demographically balanced
+  // [js-set-map-lookups] Build O(1) lookup map instead of .find() per result
+  const candidateMap = new Map<string, CandidateRawData>();
+  for (const c of originalCandidates) {
+    candidateMap.set(`${c.name}::${c.email ?? ""}`, c);
+  }
+
   const topHalf = rankedResults.slice(0, Math.ceil(rankedResults.length / 2));
   const topCandidates = topHalf.map((r) => {
-    const original = originalCandidates.find(
-      (c) => c.name === r.rawData.name && c.email === r.rawData.email
-    );
-    return original || r.rawData;
+    const key = `${r.rawData.name}::${r.rawData.email ?? ""}`;
+    return candidateMap.get(key) || r.rawData;
   });
 
   const genderDist = calculateDistribution(topCandidates.map((c) => c.gender || "unknown"));
