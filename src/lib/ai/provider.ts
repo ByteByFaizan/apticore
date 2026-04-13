@@ -1,6 +1,8 @@
 /* ═══════════════════════════════════════════════
-   AI Provider — Gemini 2.5 Flash
+   AI Provider — Gemini 2.5 Pro / Flash
    Google Generative AI via @google/generative-ai
+   Pro for accuracy-critical tasks (parsing, JD)
+   Flash for speed tasks (explanations)
    ═══════════════════════════════════════════════ */
 
 import type { AICompletionOptions, AICompletionResult } from "../types";
@@ -141,8 +143,9 @@ class GeminiProvider implements IAIProvider {
   async complete(options: AICompletionOptions): Promise<AICompletionResult> {
     return withRetry(async () => {
       const genAI = await this.getSDK();
+      const selectedModel = options.model ?? "gemini-2.5-pro";
       const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash",
+        model: selectedModel,
         generationConfig: {
           temperature: options.temperature ?? 0.3,
           maxOutputTokens: options.maxTokens ?? 4096,

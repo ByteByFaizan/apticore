@@ -34,7 +34,6 @@ service-account*.json
 serviceAccountKey*.json
 *.json.key
 .firebase/
-.firebaserc
 firebase-debug.log
 firestore-debug.log
 database-debug.log
@@ -104,11 +103,10 @@ pip-delete-this-directory.txt
 .clinerules
 skills-lock.json
 docs/
+test/
 
 # ── Gemini / AI Keys (extra safety) ──
 *api-key*
-*secret*
-!src/**
 
 # ── Misc ──
 *.cache

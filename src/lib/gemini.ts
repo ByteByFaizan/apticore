@@ -314,6 +314,7 @@ Minimum Experience Required: ${jdRequirements.minimumExperience} years`,
     ],
     temperature: 0.2,
     maxTokens: 300,
+    model: "gemini-2.5-flash",
   });
 
   return result.content.trim();

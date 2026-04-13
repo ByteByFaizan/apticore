@@ -150,6 +150,7 @@ export interface AICompletionOptions {
   temperature?: number;
   maxTokens?: number;
   jsonMode?: boolean;
+  model?: "gemini-2.5-pro" | "gemini-2.5-flash";
 }
 
 export interface AICompletionResult {
