@@ -4,11 +4,18 @@
    ═══════════════════════════════════════════════ */
 
 import { NextRequest } from "next/server";
-import { verifyAuth, authErrorResponse } from "@/lib/auth";
+import { verifyAuth } from "@/lib/auth";
 import { getUserProfile, createOrUpdateUserProfile } from "@/lib/firestore";
+import { UpdateProfileSchema } from "@/lib/validation";
+import { apiSuccess, handleApiError } from "@/lib/api-response";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 export async function GET(request: NextRequest) {
   try {
+    // Rate limit
+    const rateLimitError = checkRateLimit(request, "read");
+    if (rateLimitError) return rateLimitError;
+
     const user = await verifyAuth(request);
     const profile = await getUserProfile(user.uid);
 
@@ -19,7 +26,7 @@ export async function GET(request: NextRequest) {
         displayName: user.name,
       });
 
-      return Response.json({
+      return apiSuccess({
         profile: {
           uid: user.uid,
           email: user.email,
@@ -30,35 +37,41 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return Response.json({ profile });
+    return apiSuccess({ profile });
   } catch (err) {
-    return authErrorResponse(err);
+    return handleApiError(err, "user/profile GET");
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
+    // Rate limit
+    const rateLimitError = checkRateLimit(request, "write");
+    if (rateLimitError) return rateLimitError;
+
     // [async-api-routes] Start auth + body parse in parallel
     const [user, body] = await Promise.all([
       verifyAuth(request),
       request.json(),
     ]);
 
-    // Only allow updating specific fields
-    const allowedFields = ["displayName", "company", "role"];
-    const updates: Record<string, string> = { email: user.email };
+    // Validate with Zod
+    const validated = UpdateProfileSchema.parse(body);
 
-    for (const field of allowedFields) {
-      if (body[field] && typeof body[field] === "string") {
-        updates[field] = body[field].trim();
-      }
-    }
+    // Build update object from validated fields
+    const updates: { email: string; displayName?: string; company?: string; role?: string } = {
+      email: user.email,
+    };
 
-    await createOrUpdateUserProfile(user.uid, updates as { email: string; displayName?: string });
+    if (validated.displayName !== undefined) updates.displayName = validated.displayName;
+    if (validated.company !== undefined) updates.company = validated.company;
+    if (validated.role !== undefined) updates.role = validated.role;
+
+    await createOrUpdateUserProfile(user.uid, updates);
     const profile = await getUserProfile(user.uid);
 
-    return Response.json({ profile });
+    return apiSuccess({ profile });
   } catch (err) {
-    return authErrorResponse(err);
+    return handleApiError(err, "user/profile PUT");
   }
 }

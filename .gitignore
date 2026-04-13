@@ -1,45 +1,49 @@
-docs/
-.agents/
+# ═══════════════════════════════════════════════
+# AptiCore — .gitignore
+# ═══════════════════════════════════════════════
 
-# Dependencies
+# ── Dependencies ──
 /node_modules
 /.pnp
 .pnp.*
 
-# Next.js
+# ── Next.js ──
 /.next/
 /out/
 next-env.d.ts
 
-# Production
+# ── Production Build ──
 /build
 /dist
+/.vercel
 
-# TypeScript
+# ── TypeScript ──
 *.tsbuildinfo
+tsconfig.tsbuildinfo
 
-# Misc
-.DS_Store
-Thumbs.db
-Desktop.ini
-*.pem
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Environment Variables (Security)
+# ── Environment Variables (CRITICAL — contains API keys) ──
 .env
 .env.*
 !.env.example
 !.env.local.example
 
-# Vercel
-.vercel
+# ── Firebase / Google Cloud ──
+*-credentials.json
+*-service-account*.json
+service-account*.json
+serviceAccountKey*.json
+*.json.key
+.firebase/
+.firebaserc
+firebase-debug.log
+firestore-debug.log
+database-debug.log
+ui-debug.log
+pubsub-debug.log
+storage-debug.log
+firebase-export*/
 
-# IDE / Editor
+# ── IDE / Editor ──
 .vscode/
 .idea/
 *.swp
@@ -47,17 +51,40 @@ pnpm-debug.log*
 *~
 .project
 .settings/
+*.sublime-project
+*.sublime-workspace
+.history/
 
-# OS
+# ── OS Files ──
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
 *.tmp
 *.bak
+*.orig
 
-# Testing / Coverage
+# ── Logs ──
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# ── Testing / Coverage ──
 coverage/
 .nyc_output/
 *.lcov
+__tests__/__snapshots__/
 
-# Python (AI/ML Backend)
+# ── Private Keys / Certs ──
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+
+# ── Python (if used for ML pipeline) ──
 __pycache__/
 *.py[cod]
 *$py.class
@@ -72,16 +99,18 @@ pip-delete-this-directory.txt
 .coverage
 *.egg-info/
 
-# Google Cloud / Firebase
-*-credentials.json
-*.json.key
-.firebase/
-firebase-debug.log
-firestore-debug.log
-ui-debug.log
-
-# Skills
-skills-lock.json
-
-
+# ── AI Agent / Tooling ──
+.agents/
 .clinerules
+skills-lock.json
+docs/
+
+# ── Gemini / AI Keys (extra safety) ──
+*api-key*
+*secret*
+!src/**
+
+# ── Misc ──
+*.cache
+.eslintcache
+.turbo/

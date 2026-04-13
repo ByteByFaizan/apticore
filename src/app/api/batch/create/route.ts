@@ -4,46 +4,28 @@
    ═══════════════════════════════════════════════ */
 
 import { NextRequest, after } from "next/server";
-import { verifyAuth, authErrorResponse } from "@/lib/auth";
+import { verifyAuth } from "@/lib/auth";
 import { createJobBatch, incrementUserBatchCount } from "@/lib/firestore";
+import { CreateBatchSchema } from "@/lib/validation";
+import { apiSuccess, handleApiError } from "@/lib/api-response";
+import { checkRateLimit } from "@/lib/rate-limiter";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit
+    const rateLimitError = checkRateLimit(request, "create");
+    if (rateLimitError) return rateLimitError;
+
     // [async-api-routes] Start auth + body parse in parallel
     const authPromise = verifyAuth(request);
     const bodyPromise = request.json();
 
     const user = await authPromise;
-    const { jdText, fileCount } = await bodyPromise;
+    const body = await bodyPromise;
 
-    // ── Validation ──
-    if (!jdText || typeof jdText !== "string") {
-      return Response.json(
-        { error: "Job description text is required" },
-        { status: 400 }
-      );
-    }
-
-    if (jdText.trim().length < 50) {
-      return Response.json(
-        { error: "Job description is too short. Please provide at least 50 characters for accurate matching." },
-        { status: 400 }
-      );
-    }
-
-    if (!fileCount || fileCount < 1) {
-      return Response.json(
-        { error: "At least one resume file is required" },
-        { status: 400 }
-      );
-    }
-
-    if (fileCount > 50) {
-      return Response.json(
-        { error: "Maximum 50 resumes per batch" },
-        { status: 400 }
-      );
-    }
+    // ── Validate with Zod ──
+    const { jdText, fileCount } = CreateBatchSchema.parse(body);
 
     // ── Create batch ──
     const batchId = await createJobBatch(user.uid, jdText.trim(), fileCount);
@@ -51,8 +33,13 @@ export async function POST(request: NextRequest) {
     // [server-after-nonblocking] Increment count after response sent
     after(() => incrementUserBatchCount(user.uid).catch(() => {}));
 
-    return Response.json({ batchId, message: "Batch created. Upload resumes next." });
+    logger.info("Batch created", { batchId, userId: user.uid, fileCount });
+
+    return apiSuccess(
+      { batchId, message: "Batch created. Upload resumes next." },
+      201
+    );
   } catch (err) {
-    return authErrorResponse(err);
+    return handleApiError(err, "batch/create");
   }
 }

@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── User Profiles ──
+    // Users can read/write only their own profile
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false; // No client-side deletion
+    }
+
+    // ── Job Batches ──
+    // Read only by owner; all writes via Admin SDK (server-side)
+    match /jobBatches/{batchId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if false; // Server-side only via Admin SDK
+
+      // Subcollections inherit read access from parent
+      match /candidates/{candidateId} {
+        allow read: if request.auth != null && get(/databases/$(database)/documents/jobBatches/$(batchId)).data.userId == request.auth.uid;
+        allow write: if false;
+      }
+
+      match /biasReport/{reportId} {
+        allow read: if request.auth != null && get(/databases/$(database)/documents/jobBatches/$(batchId)).data.userId == request.auth.uid;
+        allow write: if false;
+      }
+
+      match /resumeFiles/{fileId} {
+        allow read: if false; // Never expose raw file data to client
+        allow write: if false;
+      }
+
+      match /resumes/{resumeId} {
+        allow read: if false; // Metadata only via API
+        allow write: if false;
+      }
+    }
+
+    // ── Default: deny all ──
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

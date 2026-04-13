@@ -1,9 +1,11 @@
 /* ═══════════════════════════════════════════════
    Matcher — Skill-Based Evaluation Engine
    PRD Steps 5 & 6: Matching + Ranking
+   Hybrid: Keyword + Alias + Semantic Matching
    ═══════════════════════════════════════════════ */
 
 import { getAIProvider } from "./ai/provider";
+import { logger } from "./logger";
 import type {
   AnonymizedCandidate,
   JDRequirements,
@@ -11,7 +13,7 @@ import type {
 } from "./types";
 
 /**
- * Match a single candidate against JD requirements.
+ * Match a single candidate against JD requirements (keyword-based).
  * Returns match score (0-100) and per-skill breakdown.
  */
 export function matchCandidateToJD(
@@ -65,6 +67,48 @@ export function matchCandidateToJD(
   return {
     score: Math.min(totalScore, 100),
     skillBreakdown,
+  };
+}
+
+/**
+ * Hybrid matching: combines keyword score with semantic embedding similarity.
+ * Fix 1: This was dead code before — now properly integrated.
+ *
+ * Scoring formula:
+ *   finalScore = keywordScore * 0.7 + semanticScore * 0.3
+ *
+ * Semantic matching catches:
+ *   - "data engineering" ↔ "ETL pipelines"
+ *   - "full-stack development" ↔ "React + Node.js"
+ *   - "DevOps" ↔ "CI/CD, Docker, Kubernetes"
+ */
+export async function hybridMatchCandidateToJD(
+  candidate: AnonymizedCandidate,
+  jd: JDRequirements
+): Promise<{ score: number; skillBreakdown: SkillMatch[]; semanticBoost: number }> {
+  // Get keyword-based score first (always available, fast)
+  const keywordResult = matchCandidateToJD(candidate, jd);
+
+  // Try semantic matching as a boost factor
+  let semanticScore = 0;
+  try {
+    semanticScore = await semanticMatch(candidate.skills, jd);
+  } catch {
+    // Semantic matching failed — fall back to keyword-only
+    logger.debug("[Matcher] Semantic match fallback to keyword-only", {
+      candidateId: candidate.candidateId,
+    });
+  }
+
+  // Blend: 70% keyword + 30% semantic
+  const blendedScore = Math.round(
+    keywordResult.score * 0.7 + semanticScore * 0.3
+  );
+
+  return {
+    score: Math.min(blendedScore, 100),
+    skillBreakdown: keywordResult.skillBreakdown,
+    semanticBoost: semanticScore,
   };
 }
 
@@ -191,17 +235,21 @@ export function rankCandidates(
 }
 
 /**
- * Enhanced matching using vector embeddings (semantic similarity).
- * Use when keyword matching alone isn't sufficient.
+ * Semantic matching using vector embeddings.
+ * Catches skill relationships that keyword matching misses.
  */
 export async function semanticMatch(
   candidateSkills: string[],
   jdRequirements: JDRequirements
 ): Promise<number> {
+  if (candidateSkills.length === 0) return 0;
+
   const ai = getAIProvider();
 
   const candidateText = candidateSkills.join(", ");
   const jdText = [...jdRequirements.requiredSkills, ...jdRequirements.preferredSkills].join(", ");
+
+  if (!jdText) return 0;
 
   try {
     const [candidateEmb, jdEmb] = await ai.generateEmbeddings([candidateText, jdText]);

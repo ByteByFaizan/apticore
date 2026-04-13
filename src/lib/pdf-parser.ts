@@ -1,9 +1,10 @@
 /* ═══════════════════════════════════════════════
    PDF/DOCX Parser — Text Extraction
-   Uses pdf-parse for PDF files
+   Uses pdf-parse for PDF, JSZip for DOCX
    ═══════════════════════════════════════════════ */
 
 import pdf from "pdf-parse";
+import { logger } from "./logger";
 
 /**
  * Extract text from a PDF buffer.
@@ -39,7 +40,8 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<{
 
 /**
  * Extract text from a DOCX buffer.
- * Basic extraction — reads paragraphs from the XML structure.
+ * DOCX = ZIP archive containing word/document.xml.
+ * Uses JSZip to properly unpack the archive and extract paragraph text.
  */
 export async function extractTextFromDOCX(buffer: Buffer): Promise<{
   text: string;
@@ -47,19 +49,63 @@ export async function extractTextFromDOCX(buffer: Buffer): Promise<{
   error?: string;
 }> {
   try {
-    // DOCX is a ZIP containing XML files
-    // We do a lightweight parse without heavy deps
-    const content = buffer.toString("utf-8");
+    // Dynamic import to keep bundle lean when not used
+    const JSZip = (await import("jszip")).default;
+    const zip = await JSZip.loadAsync(buffer);
 
-    // Look for XML content (word/document.xml inside the ZIP)
-    // For a proper implementation, use JSZip — but keeping lightweight for now
-    // Extract text between XML tags
-    const textContent = content
-      .replace(/<[^>]+>/g, " ") // Strip XML tags
-      .replace(/\s+/g, " ") // Normalize whitespace
-      .trim();
+    // Main content is in word/document.xml
+    const documentXml = zip.file("word/document.xml");
+    if (!documentXml) {
+      return {
+        text: "",
+        status: "PARSE_FAILED",
+        error: "Invalid DOCX: word/document.xml not found in archive",
+      };
+    }
 
-    if (textContent.length < 10) {
+    const xmlContent = await documentXml.async("text");
+
+    // Extract text from <w:t> tags (Word text elements)
+    const textParts: string[] = [];
+    // Match all <w:t ...>text</w:t> elements
+    const wtRegex = /<w:t[^>]*>([^<]*)<\/w:t>/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = wtRegex.exec(xmlContent)) !== null) {
+      if (match[1]) {
+        textParts.push(match[1]);
+      }
+    }
+
+    // Also detect paragraph breaks via <w:p> tags
+    // Simple approach: join with spaces, insert newlines at paragraph boundaries
+    const fullXml = xmlContent;
+    const paragraphs: string[] = [];
+    const paraRegex = /<w:p[\s>][\s\S]*?<\/w:p>/g;
+    let paraMatch: RegExpExecArray | null;
+
+    while ((paraMatch = paraRegex.exec(fullXml)) !== null) {
+      const paraXml = paraMatch[0];
+      const paraTexts: string[] = [];
+      const innerWtRegex = /<w:t[^>]*>([^<]*)<\/w:t>/g;
+      let innerMatch: RegExpExecArray | null;
+
+      while ((innerMatch = innerWtRegex.exec(paraXml)) !== null) {
+        if (innerMatch[1]) {
+          paraTexts.push(innerMatch[1]);
+        }
+      }
+
+      if (paraTexts.length > 0) {
+        paragraphs.push(paraTexts.join(""));
+      }
+    }
+
+    const text = paragraphs.length > 0
+      ? paragraphs.join("\n")
+      : textParts.join(" ");
+
+    if (text.trim().length < 10) {
       return {
         text: "",
         status: "PARSE_FAILED",
@@ -67,7 +113,12 @@ export async function extractTextFromDOCX(buffer: Buffer): Promise<{
       };
     }
 
-    return { text: textContent, status: "SUCCESS" };
+    logger.debug("DOCX extracted", {
+      paragraphs: paragraphs.length,
+      chars: text.length,
+    });
+
+    return { text: text.trim(), status: "SUCCESS" };
   } catch (err) {
     return {
       text: "",
@@ -81,6 +132,8 @@ export async function extractTextFromDOCX(buffer: Buffer): Promise<{
  * Detect file type from buffer magic bytes.
  */
 export function detectFileType(buffer: Buffer): "pdf" | "docx" | "unknown" {
+  if (buffer.length < 4) return "unknown";
+
   // PDF magic bytes: %PDF
   if (buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46) {
     return "pdf";
@@ -102,6 +155,14 @@ export async function extractText(buffer: Buffer): Promise<{
   status: "SUCCESS" | "PARSE_FAILED" | "NEEDS_OCR";
   error?: string;
 }> {
+  if (!buffer || buffer.length === 0) {
+    return {
+      text: "",
+      status: "PARSE_FAILED",
+      error: "Empty file buffer",
+    };
+  }
+
   const fileType = detectFileType(buffer);
 
   switch (fileType) {

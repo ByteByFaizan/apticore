@@ -44,6 +44,55 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 }));
 
+// ── API Fetch Helper ──
+// Handles new standardized { success, data, error } response format
+
+interface ApiResponse<T = unknown> {
+  success: boolean;
+  data: T | null;
+  error: string | null;
+}
+
+async function apiFetch<T = unknown>(path: string, options?: RequestInit): Promise<T> {
+  const token = await useAuthStore.getState().getIdToken();
+  if (!token) throw new Error("Not authenticated");
+
+  // Build headers — always include Authorization
+  // For FormData, don't set Content-Type (browser sets it with boundary)
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+  };
+
+  // Merge custom headers, but preserve Authorization
+  if (options?.headers) {
+    const customHeaders = options.headers as Record<string, string>;
+    for (const [key, value] of Object.entries(customHeaders)) {
+      if (key.toLowerCase() !== "authorization" && value) {
+        headers[key] = value;
+      }
+    }
+  }
+
+  const response = await fetch(path, {
+    ...options,
+    headers,
+  });
+
+  // Parse response
+  const json: ApiResponse<T> = await response.json().catch(() => ({
+    success: false,
+    data: null,
+    error: `API error: ${response.status}`,
+  }));
+
+  // Handle standardized error format
+  if (!response.ok || !json.success) {
+    throw new Error(json.error || `API error: ${response.status}`);
+  }
+
+  return json.data as T;
+}
+
 // ── Batch Store ──
 interface BatchState {
   batches: JobBatch[];
@@ -59,27 +108,8 @@ interface BatchState {
   fetchBiasReport: (batchId: string) => Promise<void>;
   createBatch: (jdText: string, files: File[]) => Promise<string | null>;
   processBatch: (batchId: string) => Promise<void>;
+  deleteBatch: (batchId: string) => Promise<boolean>;
   clearError: () => void;
-}
-
-async function apiFetch(path: string, options?: RequestInit) {
-  const token = await useAuthStore.getState().getIdToken();
-  if (!token) throw new Error("Not authenticated");
-
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      ...options?.headers,
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || `API error: ${response.status}`);
-  }
-
-  return response.json();
 }
 
 export const useBatchStore = create<BatchState>((set, get) => ({
@@ -93,7 +123,7 @@ export const useBatchStore = create<BatchState>((set, get) => ({
   fetchBatches: async () => {
     set({ loading: true, error: null });
     try {
-      const data = await apiFetch("/api/batch/list");
+      const data = await apiFetch<{ batches: JobBatch[]; total: number }>("/api/batch/list");
       set({ batches: data.batches, loading: false });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : "Failed to fetch batches", loading: false });
@@ -103,7 +133,7 @@ export const useBatchStore = create<BatchState>((set, get) => ({
   fetchBatch: async (batchId: string) => {
     set({ loading: true, error: null });
     try {
-      const data = await apiFetch(`/api/batch/${batchId}`);
+      const data = await apiFetch<{ batch: JobBatch }>(`/api/batch/${batchId}`);
       set({ activeBatch: data.batch, loading: false });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : "Failed to fetch batch", loading: false });
@@ -114,7 +144,9 @@ export const useBatchStore = create<BatchState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const query = view ? `?view=${view}` : "";
-      const data = await apiFetch(`/api/batch/${batchId}/candidates${query}`);
+      const data = await apiFetch<{ candidates: CandidateResult[]; total: number }>(
+        `/api/batch/${batchId}/candidates${query}`
+      );
       set({ candidates: data.candidates, loading: false });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : "Failed to fetch candidates", loading: false });
@@ -124,7 +156,7 @@ export const useBatchStore = create<BatchState>((set, get) => ({
   fetchBiasReport: async (batchId: string) => {
     set({ loading: true, error: null });
     try {
-      const data = await apiFetch(`/api/batch/${batchId}/bias-report`);
+      const data = await apiFetch<{ report: BiasReport }>(`/api/batch/${batchId}/bias-report`);
       set({ biasReport: data.report, loading: false });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : "Failed to fetch bias report", loading: false });
@@ -135,15 +167,15 @@ export const useBatchStore = create<BatchState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       // Step 1: Create batch
-      const data = await apiFetch("/api/batch/create", {
+      const createData = await apiFetch<{ batchId: string; message: string }>("/api/batch/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jdText, fileCount: files.length }),
       });
 
-      const batchId = data.batchId;
+      const batchId = createData.batchId;
 
-      // Step 2: Upload files
+      // Step 2: Upload files sequentially (avoid overwhelming server)
       for (const file of files) {
         const formData = new FormData();
         formData.append("file", file);
@@ -152,7 +184,7 @@ export const useBatchStore = create<BatchState>((set, get) => ({
         await apiFetch("/api/batch/upload", {
           method: "POST",
           body: formData,
-          headers: {}, // Let browser set content-type for FormData
+          // Don't set Content-Type — browser sets multipart boundary automatically
         });
       }
 
@@ -179,6 +211,27 @@ export const useBatchStore = create<BatchState>((set, get) => ({
       set({ loading: false });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : "Failed to process batch", loading: false });
+    }
+  },
+
+  deleteBatch: async (batchId: string) => {
+    set({ loading: true, error: null });
+    try {
+      await apiFetch("/api/batch/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batchId }),
+      });
+      // Remove from local state immediately
+      set((state) => ({
+        batches: state.batches.filter((b) => b.id !== batchId),
+        activeBatch: state.activeBatch?.id === batchId ? null : state.activeBatch,
+        loading: false,
+      }));
+      return true;
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : "Failed to delete batch", loading: false });
+      return false;
     }
   },
 
