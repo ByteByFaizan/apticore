@@ -11,6 +11,8 @@ interface BatchListProps {
   loading: boolean;
   onViewBatch: (batchId: string) => void;
   onProcessBatch: (batchId: string) => void;
+  onRetryBatch: (batchId: string) => void;
+  onDeleteBatch: (batchId: string) => void;
   onCreateBatch: () => void;
 }
 
@@ -19,6 +21,8 @@ export default function BatchList({
   loading,
   onViewBatch,
   onProcessBatch,
+  onRetryBatch,
+  onDeleteBatch,
   onCreateBatch,
 }: BatchListProps) {
   const { ref, isVisible } = useScrollReveal(0.05);
@@ -56,6 +60,8 @@ export default function BatchList({
                 batch={batch}
                 onView={onViewBatch}
                 onProcess={onProcessBatch}
+                onRetry={onRetryBatch}
+                onDelete={onDeleteBatch}
               />
             </div>
           ))}
@@ -64,3 +70,4 @@ export default function BatchList({
     </section>
   );
 }
+

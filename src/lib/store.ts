@@ -215,22 +215,29 @@ export const useBatchStore = create<BatchState>((set, get) => ({
   },
 
   deleteBatch: async (batchId: string) => {
-    set({ loading: true, error: null });
+    // Optimistic: remove from UI immediately
+    const prevBatches = get().batches;
+    const prevActive = get().activeBatch;
+    set((state) => ({
+      batches: state.batches.filter((b) => b.id !== batchId),
+      activeBatch: state.activeBatch?.id === batchId ? null : state.activeBatch,
+      error: null,
+    }));
+
     try {
       await apiFetch("/api/batch/delete", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ batchId }),
       });
-      // Remove from local state immediately
-      set((state) => ({
-        batches: state.batches.filter((b) => b.id !== batchId),
-        activeBatch: state.activeBatch?.id === batchId ? null : state.activeBatch,
-        loading: false,
-      }));
       return true;
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : "Failed to delete batch", loading: false });
+      // Rollback on failure
+      set({
+        batches: prevBatches,
+        activeBatch: prevActive,
+        error: err instanceof Error ? err.message : "Failed to delete batch",
+      });
       return false;
     }
   },

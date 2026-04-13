@@ -1,0 +1,18 @@
+Kiran Desai
+Noida, UP
+kiran.d@email.com | +91 88888 77777
+
+SUMMARY
+Motivated developer with 2 years of experience. They approach problems creatively and their focus is on crafting clean, maintainable code.
+
+EXPERIENCE
+Frontend Developer | WebWorks Noida | Jul 2022 - Present
+- They built responsive web interfaces using Vue.js and Tailwind CSS.
+- Collaborated with backend teams to integrate Django REST frameworks.
+- Managed AWS S3 buckets for static assets.
+
+EDUCATION
+B.Tech in Information Technology | VIT Vellore | 2018 - 2022
+
+SKILLS
+JavaScript, Vue.js, Python, Django, AWS, SQL, NoSQL.

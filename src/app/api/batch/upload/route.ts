@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const fileName = file.name.toLowerCase();
     const hasValidExt = ALLOWED_EXTENSIONS.some((ext) => fileName.endsWith(ext));
     if (!hasValidExt) {
-      return apiError("Only PDF and DOCX files are accepted", 415);
+      return apiError("Only PDF, DOCX, and TXT files are accepted", 415);
     }
 
     // ── Store file data in Firestore (base64) ──

@@ -152,7 +152,7 @@ async function processInBackground(batchId: string, jdText: string) {
         };
       }
 
-      const extracted = await extractText(buffer);
+      const extracted = await extractText(buffer, data.fileName);
 
       if (extracted.status === "PARSE_FAILED" || extracted.status === "NEEDS_OCR") {
         return {
@@ -332,7 +332,7 @@ async function processInBackground(batchId: string, jdText: string) {
       explanation,
       rank: rankedItem.rank,
       parseStatus: parseError ? "PARSE_FAILED" as const : "SUCCESS" as const,
-      parseError,
+      ...(parseError ? { parseError } : {}),
     };
   });
 

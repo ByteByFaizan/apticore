@@ -171,7 +171,14 @@ class GeminiProvider implements IAIProvider {
 
       const chat = model.startChat({
         history,
-        ...(systemInstruction ? { systemInstruction } : {}),
+        ...(systemInstruction
+          ? {
+              systemInstruction: {
+                role: "system" as const,
+                parts: [{ text: systemInstruction }],
+              },
+            }
+          : {}),
       });
 
       const result = await chat.sendMessage(lastMessage.content);
@@ -194,8 +201,8 @@ class GeminiProvider implements IAIProvider {
   async generateEmbeddings(texts: string[]): Promise<number[][]> {
     return withRetry(async () => {
       const genAI = await this.getSDK();
-      // Fix 6: Upgraded from gemini-embedding-001 to text-embedding-004
-      const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+      // Use gemini-embedding-001 — the current recommended embedding model
+      const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
 
       const results = await Promise.all(
         texts.map(async (text) => {

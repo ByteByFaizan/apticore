@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthStore, useBatchStore, useDashboardStore } from "@/lib/store";
 
 import DashboardHeader from "./components/DashboardHeader";
@@ -14,6 +14,12 @@ import BatchList from "./components/BatchList";
 import CandidateList from "./components/CandidateList";
 import BiasReportView from "./components/BiasReportView";
 import CreateBatchModal from "./components/CreateBatchModal";
+
+/* Statuses that indicate active processing */
+const ACTIVE_STATUSES = new Set([
+  "UPLOADING", "PARSING", "ANALYZING_BIAS_BEFORE", "ANONYMIZING",
+  "MATCHING", "RANKING", "EXPLAINING", "ANALYZING_BIAS_AFTER",
+]);
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -30,9 +36,10 @@ export default function DashboardPage() {
     fetchBiasReport,
     createBatch,
     processBatch,
+    deleteBatch,
     clearError,
   } = useBatchStore();
-  const { selectedView } = useDashboardStore();
+  const { selectedView, setView } = useDashboardStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Fetch batches on mount
@@ -40,16 +47,35 @@ export default function DashboardPage() {
     fetchBatches();
   }, [fetchBatches]);
 
-  // View batch: fetch batch + candidates + bias report in parallel
+  // Auto-poll while any batch is actively processing
+  const hasActiveBatch = batches.some((b) => ACTIVE_STATUSES.has(b.status));
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (hasActiveBatch) {
+      pollRef.current = setInterval(() => {
+        fetchBatches();
+      }, 3000);
+    }
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [hasActiveBatch, fetchBatches]);
+
+  // View batch: switch tab immediately, fetch data in background
   const handleViewBatch = useCallback(
     async (batchId: string) => {
+      setView("candidates");
       await Promise.all([
         fetchBatch(batchId),
         fetchCandidates(batchId),
         fetchBiasReport(batchId),
       ]);
     },
-    [fetchBatch, fetchCandidates, fetchBiasReport]
+    [fetchBatch, fetchCandidates, fetchBiasReport, setView]
   );
 
   // Process batch
@@ -58,6 +84,22 @@ export default function DashboardPage() {
       await processBatch(batchId);
     },
     [processBatch]
+  );
+
+  // Retry failed batch (re-runs the processing pipeline)
+  const handleRetry = useCallback(
+    async (batchId: string) => {
+      await processBatch(batchId);
+    },
+    [processBatch]
+  );
+
+  // Delete batch
+  const handleDelete = useCallback(
+    async (batchId: string) => {
+      await deleteBatch(batchId);
+    },
+    [deleteBatch]
   );
 
   // Create batch
@@ -108,6 +150,8 @@ export default function DashboardPage() {
             loading={loading}
             onViewBatch={handleViewBatch}
             onProcessBatch={handleProcess}
+            onRetryBatch={handleRetry}
+            onDeleteBatch={handleDelete}
             onCreateBatch={() => setShowCreateModal(true)}
           />
         </>

@@ -1,0 +1,19 @@
+Priya Mehta
+Delhi, NCR
+priya.mehta@email.com | +91 66666 55555
+
+SUMMARY
+Passionate Full Stack Developer with 4 years of hands-on experience. She enjoys building end-to-end solutions and her leadership skills help drive team success.
+
+EXPERIENCE
+Software Engineer | GlobalTech Delhi | Feb 2020 - Present
+- She architected modern web applications using React and Next.js.
+- Built scalable backend services using Node.js and PostgreSQL.
+- Orchestrated deployments on AWS and GCP.
+- Implemented GraphQL APIs to optimize data payload.
+
+EDUCATION
+B.Tech in Computer Science | SRM University | 2016 - 2020
+
+SKILLS
+JavaScript, TypeScript, React, Next.js, Node.js, Python, AWS, GCP, GraphQL, PostgreSQL, Git.

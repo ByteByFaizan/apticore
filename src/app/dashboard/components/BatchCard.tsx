@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { JobBatch, ProcessingStatus } from "@/lib/types";
 
 const STATUS_CONFIG: Record<
@@ -25,16 +26,40 @@ const PROCESSING_STATES = new Set<ProcessingStatus>([
   "MATCHING", "RANKING", "EXPLAINING", "ANALYZING_BIAS_AFTER",
 ]);
 
+/* States where delete is NOT allowed (actively processing) */
+const UNDELETABLE_STATES = new Set<ProcessingStatus>([
+  "PARSING", "ANALYZING_BIAS_BEFORE", "ANONYMIZING",
+  "MATCHING", "RANKING", "EXPLAINING", "ANALYZING_BIAS_AFTER",
+]);
+
 interface BatchCardProps {
   batch: JobBatch;
   onView: (batchId: string) => void;
   onProcess: (batchId: string) => void;
+  onRetry: (batchId: string) => void;
+  onDelete: (batchId: string) => void;
 }
 
-export default function BatchCard({ batch, onView, onProcess }: BatchCardProps) {
+export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete }: BatchCardProps) {
   const cfg = STATUS_CONFIG[batch.status] || STATUS_CONFIG.CREATED;
   const isProcessing = PROCESSING_STATES.has(batch.status);
   const canProcess = batch.status === "CREATED" || batch.status === "UPLOADING";
+  const canRetry = batch.status === "FAILED";
+  const canDelete = !UNDELETABLE_STATES.has(batch.status);
+
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirmDelete) {
+      onDelete(batch.id);
+      setConfirmDelete(false);
+    } else {
+      setConfirmDelete(true);
+      // Auto-reset after 3 seconds
+      setTimeout(() => setConfirmDelete(false), 3000);
+    }
+  };
 
   return (
     <div
@@ -46,7 +71,7 @@ export default function BatchCard({ batch, onView, onProcess }: BatchCardProps) 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2.5 mb-1.5">
             <h3 className="text-sm font-semibold text-ink truncate">
-              {batch.jdRequirements?.title || "Processing…"}
+              {batch.jdRequirements?.title || "Pending Analysis"}
             </h3>
 
             {/* Status pill */}
@@ -68,8 +93,8 @@ export default function BatchCard({ batch, onView, onProcess }: BatchCardProps) 
           </p>
         </div>
 
-        {/* Right — Score + Action */}
-        <div className="flex items-center gap-4">
+        {/* Right — Score + Actions */}
+        <div className="flex items-center gap-3">
           {batch.fairnessScoreBefore != null &&
             batch.fairnessScoreAfter != null && (
               <div className="text-right hidden sm:block">
@@ -84,6 +109,7 @@ export default function BatchCard({ batch, onView, onProcess }: BatchCardProps) 
               </div>
             )}
 
+          {/* Process button — for new batches */}
           {canProcess && (
             <button
               onClick={(e) => {
@@ -93,6 +119,60 @@ export default function BatchCard({ batch, onView, onProcess }: BatchCardProps) 
               className="px-4 py-1.5 rounded-full bg-brand text-white text-xs font-medium hover:bg-brand-dark transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md active:scale-95"
             >
               Process
+            </button>
+          )}
+
+          {/* Retry button — for failed batches */}
+          {canRetry && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRetry(batch.id);
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-500 text-white text-xs font-medium hover:bg-amber-600 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md active:scale-95"
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+              Retry
+            </button>
+          )}
+
+          {/* Delete button — not during active processing */}
+          {canDelete && (
+            <button
+              onClick={handleDelete}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer active:scale-95 ${
+                confirmDelete
+                  ? "bg-red-500 text-white shadow-sm hover:bg-red-600"
+                  : "text-ink-faint hover:text-red-500 hover:bg-red-50"
+              }`}
+              title={confirmDelete ? "Click again to confirm" : "Delete batch"}
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+              {confirmDelete ? "Confirm" : ""}
             </button>
           )}
 
@@ -115,3 +195,4 @@ export default function BatchCard({ batch, onView, onProcess }: BatchCardProps) 
     </div>
   );
 }
+

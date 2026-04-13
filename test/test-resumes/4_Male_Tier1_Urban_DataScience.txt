@@ -1,0 +1,19 @@
+Amit Patel
+Mumbai, Maharashtra
+amit.patel@email.com | +91 77777 66666
+
+SUMMARY
+Data Scientist with 5 years of experience in machine learning. He specializes in predictive modeling and his work has driven significant business growth.
+
+EXPERIENCE
+Data Scientist | FinTech Solutions Mumbai | Aug 2019 - Present
+- He developed machine learning models using Python, TensorFlow, and Scikit-Learn.
+- Analyzed large datasets using Pandas and SQL.
+- Deployed models using containerization tools.
+
+EDUCATION
+M.Sc in Data Science | BITS Pilani | 2017 - 2019
+B.Sc in Mathematics | Mumbai University | 2014 - 2017
+
+SKILLS
+Python, Machine Learning, Deep Learning, TensorFlow, Pandas, Numpy, SQL, Data Analysis.

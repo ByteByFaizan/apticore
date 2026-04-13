@@ -106,8 +106,10 @@ export function generateBiasReport(
     after: Math.round(after.genderParity * 100),
     delta: Math.round((after.genderParity - before.genderParity) * 100),
     description:
-      after.genderParity > before.genderParity
+      after.genderParity > before.genderParity + 0.05
         ? "Gender balance improved in skill-based selection"
+        : after.genderParity < before.genderParity - 0.05
+        ? "Merit-based ranking naturally reduced statistical parity"
         : "Gender distribution remained similar",
   });
 
@@ -118,8 +120,10 @@ export function generateBiasReport(
     after: Math.round(after.collegeBiasIndex * 100),
     delta: Math.round((before.collegeBiasIndex - after.collegeBiasIndex) * 100),
     description:
-      after.collegeBiasIndex < before.collegeBiasIndex
+      after.collegeBiasIndex < before.collegeBiasIndex - 0.05
         ? "College prestige bias reduced through anonymization"
+        : after.collegeBiasIndex > before.collegeBiasIndex + 0.05
+        ? "Merit-based ranking concentrated top talent in specific tiers"
         : "College tier distribution unchanged",
   });
 
@@ -130,8 +134,10 @@ export function generateBiasReport(
     after: Math.round(after.locationBiasIndex * 100),
     delta: Math.round((before.locationBiasIndex - after.locationBiasIndex) * 100),
     description:
-      after.locationBiasIndex < before.locationBiasIndex
+      after.locationBiasIndex < before.locationBiasIndex - 0.05
         ? "Urban/rural bias reduced in merit-based ranking"
+        : after.locationBiasIndex > before.locationBiasIndex + 0.05
+        ? "Merit-based ranking concentrated top talent geographically"
         : "Location distribution remained similar",
   });
 

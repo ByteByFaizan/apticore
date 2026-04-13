@@ -1,0 +1,18 @@
+Sneha Patil
+Latur, Maharashtra 
+sneha.p@email.com | +91 98765 43210
+
+SUMMARY
+Full Stack Developer with 4 years of experience building scalable applications. She thrives in fast-paced environments and her goal is to leverage her skills in cloud technologies. 
+
+EXPERIENCE
+Software Engineer | Tech Solutions | Jan 2020 - Present
+- She developed full-stack web applications using React and Node.js.
+- Deployed microservices on GCP and managed MongoDB databases.
+- Built and integrated REST APIs for mobile applications.
+
+EDUCATION
+B.Tech in Computer Science | MGM College of Engineering, Nanded | 2016 - 2020
+
+SKILLS
+JavaScript, React, Node.js, Python, GCP, Google Cloud, SQL, MySQL, MongoDB, NoSQL, REST APIs, HTML, CSS.

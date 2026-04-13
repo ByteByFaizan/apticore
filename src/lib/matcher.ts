@@ -71,11 +71,11 @@ export function matchCandidateToJD(
 }
 
 /**
- * Hybrid matching: combines keyword score with semantic embedding similarity.
- * Fix 1: This was dead code before — now properly integrated.
+ * Hybrid matching: keyword score as base + semantic similarity as boost.
  *
  * Scoring formula:
- *   finalScore = keywordScore * 0.7 + semanticScore * 0.3
+ *   If semantic available: base + boost (up to +15 pts)
+ *   If semantic unavailable: keyword score used directly
  *
  * Semantic matching catches:
  *   - "data engineering" ↔ "ETL pipelines"
@@ -100,15 +100,15 @@ export async function hybridMatchCandidateToJD(
     });
   }
 
-  // Blend: 70% keyword + 30% semantic
-  const blendedScore = Math.round(
-    keywordResult.score * 0.7 + semanticScore * 0.3
-  );
+  // Semantic provides a boost of up to +15 points on top of keyword score
+  // This rewards candidates whose skill profile semantically aligns well
+  const semanticBoost = Math.round((semanticScore / 100) * 15);
+  const finalScore = Math.min(keywordResult.score + semanticBoost, 100);
 
   return {
-    score: Math.min(blendedScore, 100),
+    score: finalScore,
     skillBreakdown: keywordResult.skillBreakdown,
-    semanticBoost: semanticScore,
+    semanticBoost,
   };
 }
 
@@ -169,17 +169,21 @@ const SKILL_ALIASES: Record<string, string[]> = {
   python: ["py", "python3"],
   "machine learning": ["ml"],
   "artificial intelligence": ["ai"],
-  "amazon web services": ["aws"],
+  "amazon web services": ["aws", "amazon aws"],
+  aws: ["amazon web services", "amazon aws"],
   "google cloud platform": ["gcp", "google cloud"],
+  gcp: ["google cloud platform", "google cloud"],
   "microsoft azure": ["azure"],
   postgresql: ["postgres", "psql"],
   mongodb: ["mongo"],
   "ci/cd": ["cicd", "continuous integration", "continuous deployment"],
   kubernetes: ["k8s"],
   docker: ["containerization"],
-  "rest api": ["restful", "rest"],
+  "rest api": ["restful", "rest", "rest apis", "restful apis", "restful api", "restful api design"],
+  "rest apis": ["rest api", "restful", "rest", "restful apis", "restful api"],
   graphql: ["gql"],
-  sql: ["mysql", "sqlite"],
+  sql: ["mysql", "sqlite", "structured query language"],
+  nosql: ["nosql databases", "no-sql", "non-relational", "nosql database"],
   "data analysis": ["data analytics"],
   "natural language processing": ["nlp"],
   "deep learning": ["dl"],
@@ -198,6 +202,11 @@ const SKILL_ALIASES: Record<string, string[]> = {
   kotlin: ["kt"],
   flutter: ["dart"],
   "react native": ["rn"],
+  tailwind: ["tailwindcss", "tailwind css"],
+  express: ["expressjs", "express.js"],
+  firebase: ["google firebase"],
+  redis: ["redis cache"],
+  "power bi": ["powerbi"],
 };
 
 // [js-set-map-lookups] Build reverse alias map once for O(1) bidirectional lookup

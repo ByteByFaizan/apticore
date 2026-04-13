@@ -1,0 +1,19 @@
+Job Title: Full Stack Developer
+Location: Remote / Hybrid
+
+About the Role:
+We are looking for an experienced Full Stack Developer to build and maintain scalable web applications. You will be responsible for end-to-end development, from designing responsive frontend interfaces to architecting robust backend APIs and managing cloud deployments.
+
+Required Skills & Qualifications:
+- 3+ years of experience in full-stack software development
+- Strong proficiency in JavaScript/TypeScript and React for frontend development
+- Solid backend engineering experience using Node.js and Python
+- Experience designing and integrating REST APIs 
+- Proficiency with relational databases, specifically SQL (PostgreSQL or MySQL)
+- Experience deploying applications on AWS or GCP
+
+Preferred Skills (Nice to have):
+- Knowledge of NoSQL databases like MongoDB
+- Experience with GraphQL
+- Familiarity with containerization (Docker) and CI/CD pipelines
+- Bachelor's degree in Computer Science or related field

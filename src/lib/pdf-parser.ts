@@ -131,7 +131,7 @@ export async function extractTextFromDOCX(buffer: Buffer): Promise<{
 /**
  * Detect file type from buffer magic bytes.
  */
-export function detectFileType(buffer: Buffer): "pdf" | "docx" | "unknown" {
+export function detectFileType(buffer: Buffer): "pdf" | "docx" | "txt" | "unknown" {
   if (buffer.length < 4) return "unknown";
 
   // PDF magic bytes: %PDF
@@ -144,13 +144,15 @@ export function detectFileType(buffer: Buffer): "pdf" | "docx" | "unknown" {
     return "docx";
   }
 
-  return "unknown";
+  // If no magic byte but the buffer is purely text/ascii/utf8
+  // We'll optimistically treat it as txt if someone uploads a .txt file
+  return "txt";
 }
 
 /**
  * Extract text from a file buffer (auto-detect type).
  */
-export async function extractText(buffer: Buffer): Promise<{
+export async function extractText(buffer: Buffer, fileName?: string): Promise<{
   text: string;
   status: "SUCCESS" | "PARSE_FAILED" | "NEEDS_OCR";
   error?: string;
@@ -163,18 +165,25 @@ export async function extractText(buffer: Buffer): Promise<{
     };
   }
 
-  const fileType = detectFileType(buffer);
+  let fileType = detectFileType(buffer);
+
+  // Fallback for TXT files which don't have distinct magic bytes
+  if (fileType === "txt" && fileName && !fileName.toLowerCase().endsWith(".txt")) {
+    fileType = "unknown";
+  }
 
   switch (fileType) {
     case "pdf":
       return extractTextFromPDF(buffer);
     case "docx":
       return extractTextFromDOCX(buffer);
+    case "txt":
+      return { text: buffer.toString("utf8"), status: "SUCCESS" };
     default:
       return {
         text: "",
         status: "PARSE_FAILED",
-        error: "Unsupported file type. Only PDF and DOCX are accepted.",
+        error: "Unsupported file type. Only PDF, DOCX, and TXT are accepted.",
       };
   }
 }
@@ -182,5 +191,9 @@ export async function extractText(buffer: Buffer): Promise<{
 // ── Validation constants ──
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export const MAX_FILES_PER_BATCH = 50;
-export const ALLOWED_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
-export const ALLOWED_EXTENSIONS = [".pdf", ".docx"];
+export const ALLOWED_TYPES = [
+  "application/pdf", 
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain"
+];
+export const ALLOWED_EXTENSIONS = [".pdf", ".docx", ".txt"];

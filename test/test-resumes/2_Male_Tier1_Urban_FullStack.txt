@@ -1,0 +1,19 @@
+Rahul Sharma
+Bangalore, Karnataka
+rahul.sharma@email.com | +91 99999 88888
+
+SUMMARY
+Experienced software developer specializing in backend architecture. He has a strong background in distributed systems and his code is highly optimized.
+
+EXPERIENCE
+Senior Developer | InnovateTech Bangalore | Mar 2021 - Present
+- He designed scalable backend systems using Node.js and Python.
+- Migrated legacy architecture to AWS and configured CI/CD pipelines.
+- Designed PostgreSQL schemas for high-throughput transactional data.
+- Built robust RESTful APIs.
+
+EDUCATION
+B.Tech in Computer Science | Indian Institute of Technology (IIT) Delhi | 2017 - 2021
+
+SKILLS
+TypeScript, React, Node.js, Express, Python, AWS, Amazon Web Services, PostgreSQL, REST APIs, Docker, CI/CD.

@@ -103,7 +103,7 @@ pip-delete-this-directory.txt
 .clinerules
 skills-lock.json
 docs/
-test/
+
 
 # ── Gemini / AI Keys (extra safety) ──
 *api-key*
@@ -112,3 +112,4 @@ test/
 *.cache
 .eslintcache
 .turbo/
+.npm/
