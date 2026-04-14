@@ -97,7 +97,7 @@ export default function StatsRow({ batches, resetKey }: StatsRowProps) {
   ];
 
   return (
-    <div ref={ref} className="flex sm:grid sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8 scroll-snap-x sm:overflow-visible pb-1 sm:pb-0 -mx-3 px-3 sm:mx-0 sm:px-0">
+    <div ref={ref} className="flex sm:grid sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8 overflow-x-auto sm:overflow-visible scrollbar-hide pb-1 sm:pb-0 -mx-3 px-3 sm:mx-0 sm:px-0" role="region" aria-label="Dashboard statistics">
       {stats.map((stat, i) => (
         <div
           key={stat.label}

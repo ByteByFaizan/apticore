@@ -141,6 +141,9 @@ export default function CreateBatchModal({
       {/* Modal */}
       <div
         ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-batch-title"
         className="relative bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl border border-edge shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col"
         style={{
           animation: "fade-in-up 0.35s cubic-bezier(0.16,1,0.3,1) both",
@@ -152,7 +155,7 @@ export default function CreateBatchModal({
         </div>
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-edge">
-          <h2 className="text-base sm:text-lg font-semibold text-ink font-display tracking-tight">
+          <h2 id="create-batch-title" className="text-base sm:text-lg font-semibold text-ink font-display tracking-tight">
             Create New Batch
           </h2>
           <button

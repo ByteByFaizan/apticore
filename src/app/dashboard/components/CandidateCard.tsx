@@ -186,7 +186,7 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
               )}
             </div>
             <p className="text-[10px] text-amber-600/70 mt-3 italic">
-              ↑ This data was stripped before AI matching — ranking based purely on skills, experience \u0026 projects.
+              ↑ This data was stripped before AI matching — ranking based purely on skills, experience &amp; projects.
             </p>
           </div>
         )}

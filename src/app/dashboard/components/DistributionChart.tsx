@@ -39,7 +39,7 @@ export default function DistributionChart({
   }));
 
   return (
-    <div className="bg-white rounded-2xl border border-edge p-3 sm:p-5 transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)]">
+    <div className="bg-white rounded-2xl border border-edge p-3 sm:p-5 transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)]" role="img" aria-label={`${title} chart`}>
       <p className="text-[10px] text-ink-faint uppercase tracking-[0.15em] font-semibold mb-2 sm:mb-4">
         {title}
       </p>

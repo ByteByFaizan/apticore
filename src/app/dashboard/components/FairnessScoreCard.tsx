@@ -75,10 +75,8 @@ export default function FairnessScoreCard({
             }}
           >
             <svg
-              width="112"
-              height="112"
+              className="absolute inset-0 w-full h-full"
               viewBox="0 0 112 112"
-              className="absolute inset-0"
               style={{ transform: "rotate(-90deg)" }}
             >
               {/* Track */}

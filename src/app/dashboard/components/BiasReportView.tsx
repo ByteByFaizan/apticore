@@ -226,7 +226,8 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
                     stroke="currentColor"
                     strokeWidth="2"
                     strokeLinecap="round"
-                    className="text-ink-faint shrink-0 mt-3"
+                    className="text-ink-faint shrink-0 hidden sm:block self-center mt-3"
+                    aria-hidden="true"
                   >
                     <path d="M5 12h14" />
                     <path d="M12 5l7 7-7 7" />

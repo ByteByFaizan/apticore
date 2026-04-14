@@ -87,7 +87,8 @@ export default function DashboardLayout({
             <button
               onClick={() => setMobileNavOpen(!mobileNavOpen)}
               className="sm:hidden w-9 h-9 rounded-lg flex items-center justify-center hover:bg-surface-alt transition-colors cursor-pointer"
-              aria-label="Toggle navigation"
+              aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
+              aria-expanded={mobileNavOpen}
             >
               <svg
                 width="18"

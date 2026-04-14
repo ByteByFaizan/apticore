@@ -64,6 +64,15 @@ body {
   background: var(--color-ink-faint);
 }
 
+/* Hide scrollbar while keeping scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Selection */
 ::selection {
   background-color: rgba(28, 63, 58, 0.12);
