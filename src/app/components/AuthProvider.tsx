@@ -51,8 +51,11 @@ export default function AuthProvider({
     }
   }, [user, loading, initialized, pathname, router]);
 
-  // Show nothing while checking auth for protected routes
-  if (!initialized) {
+  // Show loading only on protected/auth routes while checking auth
+  const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
+  const isAuthRoute = AUTH_ROUTES.some((r) => pathname.startsWith(r));
+
+  if (!initialized && (isProtected || isAuthRoute)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
         <div className="flex flex-col items-center gap-4">
