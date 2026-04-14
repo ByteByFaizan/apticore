@@ -19,7 +19,7 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
     return (
       <EmptyState
         title="No bias report"
-        description="Select a completed batch from Overview to view its before & after fairness analysis."
+        description="Select a completed batch from Overview to view its before &amp; after fairness analysis."
         icon={
           <svg
             width="28"
@@ -107,8 +107,6 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
 
               {/* Before → After bars */}
               {(() => {
-                // Bias metrics: lower = better (red/green inverted)
-                // Quality metrics: higher = better (green both ways)
                 const isBiasMetric = imp.metric === "College Bias" || imp.metric === "Location Bias";
                 const beforeColor = isBiasMetric ? "bg-red-400" : "bg-sky-400";
                 const beforeTrack = isBiasMetric ? "bg-red-100" : "bg-sky-100";
@@ -162,7 +160,7 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
         </div>
       </section>
 
-      {/* ── Distribution Charts (Recharts) ── */}
+      {/* ── Distribution Charts — Before vs After ── */}
       <section ref={distributionReveal.ref}>
         <div
           className="flex items-center gap-4 mb-5"
@@ -174,26 +172,65 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
           <div className="flex-1 h-px bg-gradient-to-r from-edge to-transparent" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div style={revealStyle(distributionReveal.isVisible, 0, 0.1)}>
-            <DistributionChart
-              title="Gender Distribution"
-              data={biasReport.after.genderDistribution}
-            />
+        {/* Gender */}
+        <div className="mb-6">
+          <p className="text-[10px] text-ink-faint uppercase tracking-[0.15em] font-semibold mb-3">Gender Distribution</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div style={revealStyle(distributionReveal.isVisible, 0, 0.1)}>
+              <DistributionChart
+                title="Before — Gender"
+                data={biasReport.before.genderDistribution}
+                accentColor="#EF4444"
+              />
+            </div>
+            <div style={revealStyle(distributionReveal.isVisible, 1, 0.1)}>
+              <DistributionChart
+                title="After — Gender"
+                data={biasReport.after.genderDistribution}
+              />
+            </div>
           </div>
-          <div style={revealStyle(distributionReveal.isVisible, 1, 0.1)}>
-            <DistributionChart
-              title="College Tier"
-              data={biasReport.after.collegeTierDistribution}
-              accentColor="#5BA08F"
-            />
+        </div>
+
+        {/* College Tier */}
+        <div className="mb-6">
+          <p className="text-[10px] text-ink-faint uppercase tracking-[0.15em] font-semibold mb-3">College Tier</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div style={revealStyle(distributionReveal.isVisible, 2, 0.1)}>
+              <DistributionChart
+                title="Before — College Tier"
+                data={biasReport.before.collegeTierDistribution}
+                accentColor="#EF4444"
+              />
+            </div>
+            <div style={revealStyle(distributionReveal.isVisible, 3, 0.1)}>
+              <DistributionChart
+                title="After — College Tier"
+                data={biasReport.after.collegeTierDistribution}
+                accentColor="#5BA08F"
+              />
+            </div>
           </div>
-          <div style={revealStyle(distributionReveal.isVisible, 2, 0.1)}>
-            <DistributionChart
-              title="Location Type"
-              data={biasReport.after.locationDistribution}
-              accentColor="#8B5CF6"
-            />
+        </div>
+
+        {/* Location */}
+        <div>
+          <p className="text-[10px] text-ink-faint uppercase tracking-[0.15em] font-semibold mb-3">Location Type</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div style={revealStyle(distributionReveal.isVisible, 4, 0.1)}>
+              <DistributionChart
+                title="Before — Location"
+                data={biasReport.before.locationDistribution}
+                accentColor="#EF4444"
+              />
+            </div>
+            <div style={revealStyle(distributionReveal.isVisible, 5, 0.1)}>
+              <DistributionChart
+                title="After — Location"
+                data={biasReport.after.locationDistribution}
+                accentColor="#8B5CF6"
+              />
+            </div>
           </div>
         </div>
       </section>

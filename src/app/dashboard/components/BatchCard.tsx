@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { JobBatch, ProcessingStatus } from "@/lib/types";
 
 const STATUS_CONFIG: Record<
@@ -8,7 +8,7 @@ const STATUS_CONFIG: Record<
   { label: string; bg: string; text: string; dot?: string }
 > = {
   CREATED:              { label: "Created",       bg: "bg-gray-50",    text: "text-gray-600" },
-  UPLOADING:            { label: "Ready",        bg: "bg-emerald-50", text: "text-emerald-700" },
+  UPLOADING:            { label: "Ready",         bg: "bg-emerald-50", text: "text-emerald-700" },
   PARSING:              { label: "Parsing",       bg: "bg-blue-50",    text: "text-blue-700",   dot: "bg-blue-400" },
   ANALYZING_BIAS_BEFORE:{ label: "Analyzing",     bg: "bg-amber-50",   text: "text-amber-700",  dot: "bg-amber-400" },
   ANONYMIZING:          { label: "Anonymizing",   bg: "bg-purple-50",  text: "text-purple-700", dot: "bg-purple-400" },
@@ -20,9 +20,15 @@ const STATUS_CONFIG: Record<
   FAILED:               { label: "Failed",        bg: "bg-red-50",     text: "text-red-700" },
 };
 
+/* Pipeline steps in order — used for progress indicator */
+const PIPELINE_STEPS: ProcessingStatus[] = [
+  "PARSING", "ANALYZING_BIAS_BEFORE", "ANONYMIZING",
+  "MATCHING", "RANKING", "EXPLAINING", "ANALYZING_BIAS_AFTER",
+];
+
 /* Processing states that should show the pulsing dot */
 const PROCESSING_STATES = new Set<ProcessingStatus>([
-  "UPLOADING", "PARSING", "ANALYZING_BIAS_BEFORE", "ANONYMIZING",
+  "PARSING", "ANALYZING_BIAS_BEFORE", "ANONYMIZING",
   "MATCHING", "RANKING", "EXPLAINING", "ANALYZING_BIAS_AFTER",
 ]);
 
@@ -48,18 +54,30 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
   const canDelete = !UNDELETABLE_STATES.has(batch.status);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timer on unmount to prevent state updates on unmounted component
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirmDelete) {
       onDelete(batch.id);
       setConfirmDelete(false);
+      if (timerRef.current) clearTimeout(timerRef.current);
     } else {
       setConfirmDelete(true);
       // Auto-reset after 3 seconds
-      setTimeout(() => setConfirmDelete(false), 3000);
+      timerRef.current = setTimeout(() => setConfirmDelete(false), 3000);
     }
   };
+
+  // Pipeline progress: which step are we on?
+  const currentStepIdx = PIPELINE_STEPS.indexOf(batch.status);
 
   return (
     <div
@@ -76,7 +94,7 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
 
             {/* Status pill */}
             <span
-              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${cfg.bg} ${cfg.text}`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold shrink-0 ${cfg.bg} ${cfg.text}`}
             >
               {isProcessing && cfg.dot && (
                 <span
@@ -91,6 +109,32 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
             {batch.candidateCount} candidate{batch.candidateCount !== 1 ? "s" : ""}{" "}
             · {new Date(batch.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </p>
+
+          {/* Error message for failed batches */}
+          {batch.status === "FAILED" && batch.error && (
+            <p className="text-xs text-red-500 mt-1.5 line-clamp-2">
+              {batch.error}
+            </p>
+          )}
+
+          {/* Required skills preview */}
+          {batch.jdRequirements?.requiredSkills && batch.jdRequirements.requiredSkills.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {batch.jdRequirements.requiredSkills.slice(0, 5).map((skill) => (
+                <span
+                  key={skill}
+                  className="px-2 py-0.5 rounded-full bg-brand/5 text-[10px] text-brand/70 font-medium"
+                >
+                  {skill}
+                </span>
+              ))}
+              {batch.jdRequirements.requiredSkills.length > 5 && (
+                <span className="text-[10px] text-ink-faint self-center">
+                  +{batch.jdRequirements.requiredSkills.length - 5}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right — Score + Actions */}
@@ -192,7 +236,39 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
           </svg>
         </div>
       </div>
+
+      {/* ── Pipeline Progress Bar — visible during active processing ── */}
+      {isProcessing && currentStepIdx >= 0 && (
+        <div className="mt-4 pt-3 border-t border-edge/50">
+          <div className="flex items-center gap-1">
+            {PIPELINE_STEPS.map((step, i) => {
+              const isDone = i < currentStepIdx;
+              const isCurrent = i === currentStepIdx;
+              return (
+                <div key={step} className="flex-1 flex flex-col items-center gap-1">
+                  <div
+                    className={`h-1.5 w-full rounded-full transition-all duration-500 ${
+                      isDone
+                        ? "bg-emerald"
+                        : isCurrent
+                        ? "bg-brand animate-pulse"
+                        : "bg-gray-100"
+                    }`}
+                  />
+                  {isCurrent && (
+                    <span className="text-[9px] text-brand font-semibold whitespace-nowrap">
+                      {cfg.label}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-[10px] text-ink-faint mt-1.5">
+            Step {currentStepIdx + 1} of {PIPELINE_STEPS.length}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
-

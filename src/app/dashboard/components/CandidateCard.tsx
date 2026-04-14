@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { CandidateResult } from "@/lib/types";
 
 interface CandidateCardProps {
@@ -7,12 +8,17 @@ interface CandidateCardProps {
 }
 
 export default function CandidateCard({ candidate }: CandidateCardProps) {
+  const [showOriginal, setShowOriginal] = useState(false);
+
   const scoreColor =
     candidate.matchScore >= 80
       ? { ring: "border-emerald", text: "text-emerald", bg: "bg-emerald/5" }
       : candidate.matchScore >= 60
       ? { ring: "border-amber-400", text: "text-amber-600", bg: "bg-amber-50" }
       : { ring: "border-red-300", text: "text-red-500", bg: "bg-red-50" };
+
+  const raw = candidate.rawData;
+  const anon = candidate.anonymizedData;
 
   return (
     <div className="group bg-white rounded-xl border border-edge hover:border-brand/20 p-5 transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)] hover:-translate-y-0.5">
@@ -25,16 +31,25 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
               #{candidate.rank}
             </span>
             <h3 className="text-sm font-semibold text-ink">
-              {candidate.anonymizedData.candidateId}
+              {anon.candidateId}
             </h3>
             <span className="px-2 py-0.5 rounded-full bg-surface-alt text-[11px] text-ink-muted font-medium">
-              {candidate.anonymizedData.educationLevel}
+              {anon.educationLevel}
             </span>
+            <span className="px-2 py-0.5 rounded-full bg-brand/5 text-[11px] text-brand/70 font-medium">
+              {anon.experienceYears} yr{anon.experienceYears !== 1 ? "s" : ""} exp
+            </span>
+            {/* Semantic boost badge */}
+            {(candidate.semanticBoost ?? 0) > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-[11px] text-indigo-600 font-semibold" title="Semantic matching boost from AI embeddings">
+                +{candidate.semanticBoost} semantic
+              </span>
+            )}
           </div>
 
           {/* Skills */}
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {candidate.anonymizedData.skills.slice(0, 8).map((skill) => (
+            {anon.skills.slice(0, 8).map((skill) => (
               <span
                 key={skill}
                 className="px-2 py-0.5 rounded-full bg-brand/5 text-xs text-brand/80 font-medium hover:bg-brand/10 transition-colors duration-200"
@@ -42,9 +57,9 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
                 {skill}
               </span>
             ))}
-            {candidate.anonymizedData.skills.length > 8 && (
+            {anon.skills.length > 8 && (
               <span className="text-xs text-ink-faint self-center">
-                +{candidate.anonymizedData.skills.length - 8} more
+                +{anon.skills.length - 8} more
               </span>
             )}
           </div>
@@ -95,6 +110,86 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
             </span>
           ))}
         </div>
+      </div>
+
+      {/* ── Before/After Toggle — Reveal what was anonymized ── */}
+      <div className="mt-4 pt-4 border-t border-edge/50">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowOriginal(!showOriginal);
+          }}
+          className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-faint hover:text-brand transition-colors cursor-pointer"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`transition-transform duration-200 ${showOriginal ? "rotate-90" : ""}`}
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+          {showOriginal ? "Hide Original Data" : "Reveal Original Data"}
+          <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 normal-case tracking-normal font-medium">
+            Was hidden from AI
+          </span>
+        </button>
+
+        {showOriginal && raw && (
+          <div className="mt-3 p-4 bg-gradient-to-br from-amber-50/60 to-orange-50/30 rounded-xl border border-amber-100 animate-fade-in-up">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {/* Name */}
+              <div>
+                <p className="text-[9px] text-ink-faint uppercase tracking-wider font-semibold mb-0.5">Name</p>
+                <p className="text-sm text-ink font-medium">{raw.name || "—"}</p>
+              </div>
+              {/* Gender */}
+              <div>
+                <p className="text-[9px] text-ink-faint uppercase tracking-wider font-semibold mb-0.5">Gender</p>
+                <p className="text-sm text-ink font-medium capitalize">{raw.gender || "—"}</p>
+              </div>
+              {/* College */}
+              <div>
+                <p className="text-[9px] text-ink-faint uppercase tracking-wider font-semibold mb-0.5">College</p>
+                <p className="text-sm text-ink font-medium">{raw.college || "—"}</p>
+              </div>
+              {/* Location */}
+              <div>
+                <p className="text-[9px] text-ink-faint uppercase tracking-wider font-semibold mb-0.5">Location</p>
+                <p className="text-sm text-ink font-medium">{raw.location || "—"}</p>
+              </div>
+              {/* Email */}
+              {raw.email && (
+                <div>
+                  <p className="text-[9px] text-ink-faint uppercase tracking-wider font-semibold mb-0.5">Email</p>
+                  <p className="text-sm text-ink font-medium truncate">{raw.email}</p>
+                </div>
+              )}
+              {/* College Tier */}
+              {raw.collegeTier && raw.collegeTier !== "unknown" && (
+                <div>
+                  <p className="text-[9px] text-ink-faint uppercase tracking-wider font-semibold mb-0.5">College Tier</p>
+                  <p className="text-sm text-ink font-medium capitalize">{raw.collegeTier}</p>
+                </div>
+              )}
+              {/* Location Type */}
+              {raw.locationType && raw.locationType !== "unknown" && (
+                <div>
+                  <p className="text-[9px] text-ink-faint uppercase tracking-wider font-semibold mb-0.5">Area Type</p>
+                  <p className="text-sm text-ink font-medium capitalize">{raw.locationType}</p>
+                </div>
+              )}
+            </div>
+            <p className="text-[10px] text-amber-600/70 mt-3 italic">
+              ↑ This data was stripped before AI matching — ranking based purely on skills, experience \u0026 projects.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

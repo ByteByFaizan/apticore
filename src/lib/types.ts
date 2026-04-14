@@ -96,6 +96,7 @@ export interface CandidateResult {
   rawData: CandidateRawData;
   anonymizedData: AnonymizedCandidate;
   matchScore: number; // 0-100
+  semanticBoost?: number; // 0-15 pts boost from semantic matching
   skillBreakdown: SkillMatch[];
   explanation: string;
   rank: number;

@@ -11,6 +11,14 @@ interface FairnessScoreCardProps {
   resetKey?: string;
 }
 
+/** Qualitative label for fairness score */
+function getScoreLabel(score: number): { label: string; color: string } {
+  if (score >= 80) return { label: "Highly Fair", color: "text-emerald" };
+  if (score >= 60) return { label: "Fair", color: "text-sky-500" };
+  if (score >= 40) return { label: "Moderate Bias", color: "text-amber-500" };
+  return { label: "High Bias Risk", color: "text-red-500" };
+}
+
 export default function FairnessScoreCard({
   label,
   sublabel,
@@ -27,6 +35,7 @@ export default function FairnessScoreCard({
     ? "from-red-500/5 to-transparent"
     : "from-emerald/5 to-transparent";
   const ringColor = isBefore ? "border-red-200" : "border-emerald/30";
+  const qualLabel = getScoreLabel(score);
 
   return (
     <div
@@ -61,6 +70,11 @@ export default function FairnessScoreCard({
             </span>
           </div>
         </div>
+
+        {/* Qualitative label */}
+        <p className={`text-xs font-semibold mb-1 ${qualLabel.color}`}>
+          {qualLabel.label}
+        </p>
 
         <p className="text-sm text-ink-muted">{sublabel}</p>
       </div>

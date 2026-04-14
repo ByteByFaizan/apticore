@@ -245,11 +245,12 @@ async function processInBackground(batchId: string, jdText: string) {
   // [async-parallel] Run hybrid matching in parallel for all candidates
   const matchSettled = await Promise.allSettled(
     anonymized.map(async (anon) => {
-      const { score, skillBreakdown } = await hybridMatchCandidateToJD(anon, jdRequirements);
+      const { score, skillBreakdown, semanticBoost } = await hybridMatchCandidateToJD(anon, jdRequirements);
       return {
         candidateId: anon.candidateId,
         score,
         skillBreakdown,
+        semanticBoost,
       };
     })
   );
@@ -307,6 +308,7 @@ async function processInBackground(batchId: string, jdText: string) {
     rawData: CandidateRawData;
     anonymizedData: AnonymizedCandidate;
     matchScore: number;
+    semanticBoost?: number;
     skillBreakdown: SkillMatch[];
     explanation: string;
     rank: number;
@@ -328,6 +330,7 @@ async function processInBackground(batchId: string, jdText: string) {
       rawData: original,
       anonymizedData: anon,
       matchScore: rankedItem.score,
+      semanticBoost: (rankedItem as { semanticBoost?: number }).semanticBoost || 0,
       skillBreakdown: rankedItem.skillBreakdown,
       explanation,
       rank: rankedItem.rank,

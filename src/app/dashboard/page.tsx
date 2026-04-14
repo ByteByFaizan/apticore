@@ -17,7 +17,7 @@ import CreateBatchModal from "./components/CreateBatchModal";
 
 /* Statuses that indicate active processing */
 const ACTIVE_STATUSES = new Set([
-  "UPLOADING", "PARSING", "ANALYZING_BIAS_BEFORE", "ANONYMIZING",
+  "PARSING", "ANALYZING_BIAS_BEFORE", "ANONYMIZING",
   "MATCHING", "RANKING", "EXPLAINING", "ANALYZING_BIAS_AFTER",
 ]);
 

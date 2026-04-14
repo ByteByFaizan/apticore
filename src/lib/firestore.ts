@@ -49,7 +49,6 @@ function stripUndefined<T extends Record<string, any>>(obj: T): T {
  * Returns null/empty on NOT_FOUND (database not created yet).
  * Prevents 500 errors when Firestore isn't initialized.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function safeQuery<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   try {
     return await fn();
