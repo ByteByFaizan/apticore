@@ -106,43 +106,57 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
               <p className="text-sm text-ink-light mb-3">{imp.description}</p>
 
               {/* Before → After bars */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <p className="text-[10px] text-ink-faint font-medium mb-1">
-                    Before
-                  </p>
-                  <div className="h-2 bg-red-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-red-400 rounded-full transition-all duration-1000"
-                      style={{ width: `${imp.before}%` }}
-                    />
+              {(() => {
+                // Bias metrics: lower = better (red/green inverted)
+                // Quality metrics: higher = better (green both ways)
+                const isBiasMetric = imp.metric === "College Bias" || imp.metric === "Location Bias";
+                const beforeColor = isBiasMetric ? "bg-red-400" : "bg-sky-400";
+                const beforeTrack = isBiasMetric ? "bg-red-100" : "bg-sky-100";
+                const afterColor = "bg-emerald-500";
+                const afterTrack = "bg-emerald-100";
+                const clampedBefore = Math.max(0, Math.min(imp.before, 100));
+                const clampedAfter = Math.max(0, Math.min(imp.after, 100));
+
+                return (
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <p className="text-[10px] text-ink-faint font-medium mb-1">
+                        Before · {clampedBefore}%
+                      </p>
+                      <div className={`h-2 ${beforeTrack} rounded-full overflow-hidden`}>
+                        <div
+                          className={`h-full ${beforeColor} rounded-full transition-all duration-1000`}
+                          style={{ width: `${clampedBefore}%` }}
+                        />
+                      </div>
+                    </div>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      className="text-ink-faint shrink-0 mt-3"
+                    >
+                      <path d="M5 12h14" />
+                      <path d="M12 5l7 7-7 7" />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="text-[10px] text-ink-faint font-medium mb-1">
+                        After · {clampedAfter}%
+                      </p>
+                      <div className={`h-2 ${afterTrack} rounded-full overflow-hidden`}>
+                        <div
+                          className={`h-full ${afterColor} rounded-full transition-all duration-1000`}
+                          style={{ width: `${clampedAfter}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  className="text-ink-faint shrink-0 mt-3"
-                >
-                  <path d="M5 12h14" />
-                  <path d="M12 5l7 7-7 7" />
-                </svg>
-                <div className="flex-1">
-                  <p className="text-[10px] text-ink-faint font-medium mb-1">
-                    After
-                  </p>
-                  <div className="h-2 bg-emerald-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
-                      style={{ width: `${imp.after}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
             </div>
           ))}
         </div>
