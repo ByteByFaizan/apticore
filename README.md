@@ -232,79 +232,79 @@ Create a `.env.local` file in the root directory. See [`.env.example`](.env.exam
 
 ```
 apticore/
-├── public/                          # Static assets
-│   └── logo.png                     # Brand logo
-├── docs/                            # Project documentation
-│   ├── PRD.md                       # Product Requirements Document
-│   ├── TechStack.md                 # Technical Stack Specification
-│   └── DesignDoc.md                 # Design System Documentation
+├── public/                                       # Static assets
+│   └── logo.png                                  # Brand logo
+├── docs/                                         # Project documentation
+│   ├── PRD.md                                    # Product Requirements Document
+│   ├── TechStack.md                              # Technical Stack Specification
+│   └── DesignDoc.md                              # Design System Documentation
 ├── src/
 │   ├── app/
-│   │   ├── globals.css              # Design tokens, animations, utilities
-│   │   ├── layout.tsx               # Root layout (fonts, metadata, providers)
-│   │   ├── page.tsx                 # Landing page
-│   │   ├── login/                   # Authentication (login/signup/forgot)
-│   │   ├── about/                   # About & team page
-│   │   ├── privacy/                 # Privacy Policy page
-│   │   ├── dashboard/               # Protected dashboard
-│   │   │   ├── layout.tsx           # Sidebar nav + auth guard
-│   │   │   ├── page.tsx             # Dashboard orchestrator + polling
-│   │   │   ├── components/          # Dashboard UI components
-│   │   │   │   ├── StatsRow.tsx     # Animated KPI stat cards
-│   │   │   │   ├── BatchCard.tsx    # Batch card + pipeline progress
-│   │   │   │   ├── CandidateCard.tsx  # Candidate result card
-│   │   │   │   ├── BiasReportView.tsx # Bias analysis dashboard
-│   │   │   │   ├── FairnessScoreCard.tsx # SVG ring visualization
-│   │   │   │   ├── DistributionChart.tsx # Recharts bar chart
-│   │   │   │   ├── CreateBatchModal.tsx  # Batch creation wizard
-│   │   │   │   └── EmptyState.tsx   # No-data placeholder
-│   │   │   └── hooks/               # Dashboard-specific hooks
-│   │   │       ├── useScrollReveal.ts   # Scroll-triggered animations
-│   │   │       └── useAnimatedCounter.ts # Number animation
-│   │   ├── components/              # Shared UI components
-│   │   │   ├── Header.tsx           # Navbar + mobile menu + auth dropdown
-│   │   │   ├── Hero.tsx             # Landing hero section
-│   │   │   ├── Features.tsx         # 3D tilt feature grid
-│   │   │   ├── HowItWorks.tsx       # Auto-cycling pipeline demo
-│   │   │   ├── SDGImpact.tsx        # UN SDG impact cards
-│   │   │   ├── FinalCTA.tsx         # Parallax CTA banner
-│   │   │   └── Footer.tsx           # Site footer
-│   │   └── api/                     # API routes
+│   │   ├── globals.css                           # Design tokens, animations, utilities
+│   │   ├── layout.tsx                            # Root layout (fonts, metadata, providers)
+│   │   ├── page.tsx                              # Landing page
+│   │   ├── login/                                # Authentication (login/signup/forgot)
+│   │   ├── about/                                # About & team page
+│   │   ├── privacy/                              # Privacy Policy page
+│   │   ├── dashboard/                            # Protected dashboard
+│   │   │   ├── layout.tsx                        # Sidebar nav + auth guard
+│   │   │   ├── page.tsx                          # Dashboard orchestrator + polling
+│   │   │   ├── components/                       # Dashboard UI components
+│   │   │   │   ├── StatsRow.tsx                  # Animated KPI stat cards
+│   │   │   │   ├── BatchCard.tsx                 # Batch card + pipeline progress
+│   │   │   │   ├── CandidateCard.tsx             # Candidate result card
+│   │   │   │   ├── BiasReportView.tsx            # Bias analysis dashboard
+│   │   │   │   ├── FairnessScoreCard.tsx         # SVG ring visualization
+│   │   │   │   ├── DistributionChart.tsx         # Recharts bar chart
+│   │   │   │   ├── CreateBatchModal.tsx          # Batch creation wizard
+│   │   │   │   └── EmptyState.tsx                # No-data placeholder
+│   │   │   └── hooks/                            # Dashboard-specific hooks
+│   │   │       ├── useScrollReveal.ts            # Scroll-triggered animations
+│   │   │       └── useAnimatedCounter.ts         # Number animation
+│   │   ├── components/                           # Shared UI components
+│   │   │   ├── Header.tsx                        # Navbar + mobile menu + auth dropdown
+│   │   │   ├── Hero.tsx                          # Landing hero section
+│   │   │   ├── Features.tsx                      # 3D tilt feature grid
+│   │   │   ├── HowItWorks.tsx                    # Auto-cycling pipeline demo
+│   │   │   ├── SDGImpact.tsx                     # UN SDG impact cards
+│   │   │   ├── FinalCTA.tsx                      # Parallax CTA banner
+│   │   │   └── Footer.tsx                        # Site footer
+│   │   └── api/                                  # API routes
 │   │       ├── batch/
-│   │       │   ├── create/          # POST — Create batch
-│   │       │   ├── upload/          # POST — Upload resumes
-│   │       │   ├── process/         # POST — Trigger AI pipeline
-│   │       │   ├── list/            # GET  — List batches
-│   │       │   ├── [batchId]/       # GET  — Batch details
-│   │       │   └── delete/          # DELETE — Remove batch
-│   │       ├── user/profile/        # GET/POST — User profile
-│   │       └── health/              # GET — Health check
-│   ├── lib/                         # Core business logic
-│   │   ├── gemini.ts                # AI parsing, extraction, explanation
-│   │   ├── matcher.ts               # Hybrid skill matching engine
-│   │   ├── bias-engine.ts           # Bias detection & fairness scoring
-│   │   ├── anonymizer.ts            # PII removal & candidate masking
-│   │   ├── pdf-parser.ts            # Multi-format document extraction
-│   │   ├── firestore.ts             # Database operations
-│   │   ├── store.ts                 # Zustand state management (3 stores)
-│   │   ├── auth.ts                  # Auth verification + CSRF defense
-│   │   ├── rate-limiter.ts          # Token bucket rate limiting
-│   │   ├── cors.ts                  # CORS policy enforcement
-│   │   ├── validation.ts            # Zod request schemas
-│   │   ├── api-response.ts          # Standardized API envelope
-│   │   ├── types.ts                 # TypeScript type definitions
-│   │   ├── logger.ts                # Structured logging
-│   │   ├── firebase.ts              # Client-side Firebase init
-│   │   ├── firebase-admin.ts        # Server-side Admin SDK init
-│   │   └── ai/provider.ts           # Gemini abstraction + retry logic
-│   └── middleware.ts                # Edge CORS enforcement
-├── firestore.rules                  # Firestore security rules
-├── storage.rules                    # Cloud Storage security rules
-├── firebase.json                    # Firebase project configuration
-├── next.config.ts                   # Next.js + security headers
-├── tsconfig.json                    # TypeScript configuration
-├── package.json                     # Dependencies & scripts
-└── LICENSE                          # MIT License
+│   │       │   ├── create/                       # POST — Create batch
+│   │       │   ├── upload/                       # POST — Upload resumes
+│   │       │   ├── process/                      # POST — Trigger AI pipeline
+│   │       │   ├── list/                         # GET  — List batches
+│   │       │   ├── [batchId]/                    # GET  — Batch details
+│   │       │   └── delete/                       # DELETE — Remove batch
+│   │       ├── user/profile/                     # GET/POST — User profile
+│   │       └── health/                           # GET — Health check
+│   ├── lib/                                      # Core business logic
+│   │   ├── gemini.ts                             # AI parsing, extraction, explanation
+│   │   ├── matcher.ts                            # Hybrid skill matching engine
+│   │   ├── bias-engine.ts                        # Bias detection & fairness scoring
+│   │   ├── anonymizer.ts                         # PII removal & candidate masking
+│   │   ├── pdf-parser.ts                         # Multi-format document extraction
+│   │   ├── firestore.ts                          # Database operations
+│   │   ├── store.ts                              # Zustand state management (3 stores)
+│   │   ├── auth.ts                               # Auth verification + CSRF defense
+│   │   ├── rate-limiter.ts                       # Token bucket rate limiting
+│   │   ├── cors.ts                               # CORS policy enforcement
+│   │   ├── validation.ts                         # Zod request schemas
+│   │   ├── api-response.ts                       # Standardized API envelope
+│   │   ├── types.ts                              # TypeScript type definitions
+│   │   ├── logger.ts                             # Structured logging
+│   │   ├── firebase.ts                           # Client-side Firebase init
+│   │   ├── firebase-admin.ts                     # Server-side Admin SDK init
+│   │   └── ai/provider.ts                        # Gemini abstraction + retry logic
+│   └── middleware.ts                             # Edge CORS enforcement
+├── firestore.rules                               # Firestore security rules
+├── storage.rules                                 # Cloud Storage security rules
+├── firebase.json                                 # Firebase project configuration
+├── next.config.ts                                # Next.js + security headers
+├── tsconfig.json                                 # TypeScript configuration
+├── package.json                                  # Dependencies & scripts
+└── LICENSE                                       # MIT License
 ```
 
 ---
