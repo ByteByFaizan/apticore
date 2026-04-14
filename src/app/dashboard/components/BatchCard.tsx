@@ -8,7 +8,7 @@ const STATUS_CONFIG: Record<
   { label: string; bg: string; text: string; dot?: string }
 > = {
   CREATED:              { label: "Created",       bg: "bg-gray-50",    text: "text-gray-600" },
-  UPLOADING:            { label: "Uploading",     bg: "bg-blue-50",    text: "text-blue-700",   dot: "bg-blue-400" },
+  UPLOADING:            { label: "Ready",        bg: "bg-emerald-50", text: "text-emerald-700" },
   PARSING:              { label: "Parsing",       bg: "bg-blue-50",    text: "text-blue-700",   dot: "bg-blue-400" },
   ANALYZING_BIAS_BEFORE:{ label: "Analyzing",     bg: "bg-amber-50",   text: "text-amber-700",  dot: "bg-amber-400" },
   ANONYMIZING:          { label: "Anonymizing",   bg: "bg-purple-50",  text: "text-purple-700", dot: "bg-purple-400" },
