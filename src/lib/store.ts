@@ -206,9 +206,15 @@ export const useBatchStore = create<BatchState>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ batchId }),
       });
-      // Fetch updated batch
-      get().fetchBatch(batchId);
-      set({ loading: false });
+      // Optimistic: update batch status in UI immediately so user sees progress
+      set((state) => ({
+        batches: state.batches.map((b) =>
+          b.id === batchId ? { ...b, status: "PARSING" as const, error: undefined } : b
+        ),
+        loading: false,
+      }));
+      // Refresh batch list — triggers auto-poll since batch now has active status
+      get().fetchBatches();
     } catch (err) {
       set({ error: err instanceof Error ? err.message : "Failed to process batch", loading: false });
     }
