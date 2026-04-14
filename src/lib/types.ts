@@ -117,6 +117,7 @@ export interface BiasReport {
   before: BiasMetrics;
   after: BiasMetrics;
   improvements: BiasImprovement[];
+  overallImprovement: number; // positive = fairer after AptiCore
 }
 
 export interface BiasMetrics {
