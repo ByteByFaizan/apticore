@@ -84,7 +84,12 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row justify-between gap-8 sm:gap-12">
           {/* Brand */}
           <div className="sm:max-w-[320px]">
-            <Link href="/" className="font-[family-name:var(--font-lobster)] text-3xl sm:text-4xl text-ink tracking-tight hover:opacity-80 transition-opacity">
+            <Link href="/" className="inline-flex items-center gap-3 font-[family-name:var(--font-lobster)] text-3xl sm:text-4xl text-ink tracking-tight hover:opacity-80 transition-opacity">
+              <img
+                src="/logo.png"
+                alt="AptiCore logo"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-cover shadow-[0_2px_8px_rgba(91,160,143,0.25)]"
+              />
               AptiCore
             </Link>
             <p className="mt-3 sm:mt-4 text-sm leading-relaxed text-ink-muted">

@@ -396,9 +396,11 @@ function LoginPageContent() {
             }}
           >
             <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-white/[0.08] border border-white/[0.08] flex items-center justify-center backdrop-blur-sm group-hover:bg-white/[0.15] group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                <span className="text-white text-xs font-extrabold">A</span>
-              </div>
+              <img
+                src="/logo.png"
+                alt="AptiCore logo"
+                className="w-9 h-9 rounded-xl object-cover shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300"
+              />
               <span className="text-white/90 text-xl font-[family-name:var(--font-lobster)]">
                 AptiCore
               </span>

@@ -119,9 +119,11 @@ export default function DashboardLayout({
               href="/"
               className="flex items-center gap-2.5 group"
             >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-accent flex items-center justify-center group-hover:shadow-[0_2px_12px_rgba(28,63,58,0.25)] transition-shadow duration-300">
-                <span className="text-white text-xs font-extrabold">A</span>
-              </div>
+              <img
+                src="/logo.png"
+                alt="AptiCore logo"
+                className="w-8 h-8 rounded-lg object-cover group-hover:shadow-[0_2px_12px_rgba(28,63,58,0.25)] transition-shadow duration-300"
+              />
               <span className="text-brand text-lg font-[family-name:var(--font-lobster)] hidden sm:block">
                 AptiCore
               </span>

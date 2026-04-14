@@ -133,11 +133,11 @@ export default function Header() {
                 href="/"
                 className="inline-flex items-center gap-2 sm:gap-2.5 text-brand font-bold text-lg sm:text-xl tracking-tight select-none font-display"
               >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-brand to-accent flex items-center justify-center shadow-[0_2px_8px_rgba(91,160,143,0.25)]">
-                  <span className="text-white text-[10px] sm:text-xs font-extrabold">
-                    A
-                  </span>
-                </div>
+                <img
+                  src="/logo.png"
+                  alt="AptiCore logo"
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-cover shadow-[0_2px_8px_rgba(91,160,143,0.25)]"
+                />
                 <span className="font-[family-name:var(--font-lobster)] text-xl sm:text-2xl">
                   AptiCore
                 </span>
@@ -293,9 +293,11 @@ export default function Header() {
             onClick={() => setMobileOpen(false)}
             className="inline-flex items-center gap-2.5 text-white font-bold text-lg tracking-tight font-display"
           >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center shadow-lg shadow-accent/25">
-              <span className="text-white text-xs font-extrabold">A</span>
-            </div>
+            <img
+              src="/logo.png"
+              alt="AptiCore logo"
+              className="w-8 h-8 rounded-lg object-cover shadow-lg shadow-accent/25"
+            />
             <span className="font-[family-name:var(--font-lobster)] text-xl">
               AptiCore
             </span>
