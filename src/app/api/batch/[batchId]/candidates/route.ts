@@ -7,31 +7,39 @@ import { NextRequest } from "next/server";
 import { verifyAuth, verifyOwnership } from "@/lib/auth";
 import { getJobBatch, getCandidateResults } from "@/lib/firestore";
 import { apiSuccess, handleApiError, apiError } from "@/lib/api-response";
-import { checkRateLimit } from "@/lib/rate-limiter";
+import { checkRateLimit, rateLimitHeaders, rateLimitResponse } from "@/lib/rate-limiter";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ batchId: string }> }
 ) {
-  try {
-    // Rate limit
-    const rateLimitError = checkRateLimit(request, "read");
-    if (rateLimitError) return rateLimitError;
+  // Rate limit (IP-only initially)
+  const ipRl = checkRateLimit(request, "read");
+  if (!ipRl.allowed) return rateLimitResponse(ipRl);
 
+  try {
     // [async-api-routes] Start auth + params resolution in parallel
     const [user, { batchId }] = await Promise.all([
       verifyAuth(request),
       params,
     ]);
 
+    // User-based rate limit
+    const userRl = checkRateLimit(request, "read", user.uid);
+    if (!userRl.allowed) return rateLimitResponse(userRl);
+
+    const rlHeaders = rateLimitHeaders(
+      userRl.remaining < ipRl.remaining ? userRl : ipRl
+    );
+
     if (!batchId) {
-      return apiError("Batch ID is required", 400);
+      return apiError("Batch ID is required", 400, rlHeaders);
     }
 
     // Verify batch ownership
     const batch = await getJobBatch(batchId);
     if (!batch) {
-      return apiError("Batch not found", 404);
+      return apiError("Batch not found", 404, rlHeaders);
     }
     verifyOwnership(batch.userId, user.uid);
 
@@ -53,11 +61,11 @@ export async function GET(
         rank: c.rank,
       }));
 
-      return apiSuccess({ candidates: anonymizedView, total: candidates.length });
+      return apiSuccess({ candidates: anonymizedView, total: candidates.length }, 200, rlHeaders);
     }
 
-    return apiSuccess({ candidates, total: candidates.length });
+    return apiSuccess({ candidates, total: candidates.length }, 200, rlHeaders);
   } catch (err) {
-    return handleApiError(err, "batch/[batchId]/candidates");
+    return handleApiError(err, "batch/[batchId]/candidates", rateLimitHeaders(ipRl));
   }
 }

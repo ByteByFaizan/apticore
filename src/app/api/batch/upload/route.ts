@@ -10,16 +10,24 @@ import { getJobBatch, updateBatchStatus } from "@/lib/firestore";
 import { MAX_FILE_SIZE, ALLOWED_EXTENSIONS } from "@/lib/pdf-parser";
 import { adminDb } from "@/lib/firebase-admin";
 import { apiSuccess, handleApiError, apiError } from "@/lib/api-response";
-import { checkRateLimit } from "@/lib/rate-limiter";
+import { checkRateLimit, rateLimitHeaders, rateLimitResponse } from "@/lib/rate-limiter";
 import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
-  try {
-    // Rate limit
-    const rateLimitError = checkRateLimit(request, "upload");
-    if (rateLimitError) return rateLimitError;
+  // Rate limit (IP-only initially)
+  const ipRl = checkRateLimit(request, "upload");
+  if (!ipRl.allowed) return rateLimitResponse(ipRl);
 
+  try {
     const user = await verifyAuth(request);
+
+    // User-based rate limit
+    const userRl = checkRateLimit(request, "upload", user.uid);
+    if (!userRl.allowed) return rateLimitResponse(userRl);
+
+    const rlHeaders = rateLimitHeaders(
+      userRl.remaining < ipRl.remaining ? userRl : ipRl
+    );
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -27,21 +35,21 @@ export async function POST(request: NextRequest) {
 
     // ── Validation ──
     if (!batchId || typeof batchId !== "string" || batchId.trim().length === 0) {
-      return apiError("Batch ID is required", 400);
+      return apiError("Batch ID is required", 400, rlHeaders);
     }
 
     if (!file || !(file instanceof File)) {
-      return apiError("No file provided", 400);
+      return apiError("No file provided", 400, rlHeaders);
     }
 
     if (file.size === 0) {
-      return apiError("File is empty", 400);
+      return apiError("File is empty", 400, rlHeaders);
     }
 
     // Verify batch exists and belongs to user
     const batch = await getJobBatch(batchId);
     if (!batch) {
-      return apiError("Batch not found", 404);
+      return apiError("Batch not found", 404, rlHeaders);
     }
     verifyOwnership(batch.userId, user.uid);
 
@@ -49,7 +57,8 @@ export async function POST(request: NextRequest) {
     if (file.size > MAX_FILE_SIZE) {
       return apiError(
         `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-        413
+        413,
+        rlHeaders
       );
     }
 
@@ -57,7 +66,7 @@ export async function POST(request: NextRequest) {
     const fileName = file.name.toLowerCase();
     const hasValidExt = ALLOWED_EXTENSIONS.some((ext) => fileName.endsWith(ext));
     if (!hasValidExt) {
-      return apiError("Only PDF, DOCX, and TXT files are accepted", 415);
+      return apiError("Only PDF, DOCX, and TXT files are accepted", 415, rlHeaders);
     }
 
     // ── Store file data in Firestore (base64) ──
@@ -78,7 +87,8 @@ export async function POST(request: NextRequest) {
     if (!existingFiles.empty) {
       return apiError(
         `File "${file.name}" has already been uploaded to this batch`,
-        409
+        409,
+        rlHeaders
       );
     }
 
@@ -101,12 +111,16 @@ export async function POST(request: NextRequest) {
 
     logger.info("File uploaded", { batchId, fileName: file.name, size: file.size });
 
-    return apiSuccess({
-      message: "File uploaded successfully",
-      fileName: file.name,
-      size: file.size,
-    });
+    return apiSuccess(
+      {
+        message: "File uploaded successfully",
+        fileName: file.name,
+        size: file.size,
+      },
+      200,
+      rlHeaders
+    );
   } catch (err) {
-    return handleApiError(err, "batch/upload");
+    return handleApiError(err, "batch/upload", rateLimitHeaders(ipRl));
   }
 }

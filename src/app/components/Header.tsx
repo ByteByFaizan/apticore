@@ -281,6 +281,7 @@ export default function Header() {
         className={`fixed top-0 right-0 bottom-0 z-[70] w-[80%] max-w-[320px] md:hidden flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           mobileOpen ? "translate-x-0" : "translate-x-full"
         }`}
+        onClick={(e) => e.stopPropagation()}
         style={{
           background: "linear-gradient(160deg, #1C3F3A 0%, #0F2924 100%)",
         }}
@@ -321,7 +322,7 @@ export default function Header() {
         </div>
 
         {/* Nav links */}
-        <nav className="flex-1 overflow-y-auto px-4 py-4 sm:py-5 flex flex-col gap-1">
+        <nav className="overflow-y-auto px-4 py-4 sm:py-5 flex flex-col gap-1">
           {navLinks.map((link, i) => {
             const active = isLinkActive(link);
             return (
@@ -383,7 +384,7 @@ export default function Header() {
         </nav>
 
         {/* Bottom: Auth */}
-        <div className="px-4 pb-6 sm:pb-8 pt-3 border-t border-white/[0.07] safe-bottom">
+        <div className="px-4 pb-6 sm:pb-8 pt-4 mt-4 border-t border-white/[0.07] safe-bottom">
           {initialized && user ? (
             <div
               style={{

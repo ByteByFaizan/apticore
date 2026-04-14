@@ -20,7 +20,7 @@ import { hybridMatchCandidateToJD, rankCandidates } from "@/lib/matcher";
 import { detectBiasBefore, detectBiasAfter, generateBiasReport } from "@/lib/bias-engine";
 import { ProcessBatchSchema } from "@/lib/validation";
 import { apiSuccess, handleApiError } from "@/lib/api-response";
-import { checkRateLimit } from "@/lib/rate-limiter";
+import { checkRateLimit, rateLimitHeaders, rateLimitResponse } from "@/lib/rate-limiter";
 import { logger, createTimer } from "@/lib/logger";
 import type {
   CandidateRawData,
@@ -35,11 +35,11 @@ export const maxDuration = 60; // Vercel max: 60s for Pro, 10s for Hobby
 const PROCESSABLE_STATUSES = new Set(["CREATED", "UPLOADING", "FAILED"]);
 
 export async function POST(request: NextRequest) {
-  try {
-    // Rate limit
-    const rateLimitError = checkRateLimit(request, "process");
-    if (rateLimitError) return rateLimitError;
+  // Rate limit (IP-only initially — process is expensive)
+  const ipRl = checkRateLimit(request, "process");
+  if (!ipRl.allowed) return rateLimitResponse(ipRl);
 
+  try {
     // [async-api-routes] Start auth + body parse in parallel
     const authPromise = verifyAuth(request);
     const bodyPromise = request.json();
@@ -47,25 +47,34 @@ export async function POST(request: NextRequest) {
     const user = await authPromise;
     const body = await bodyPromise;
 
+    // User-based rate limit (stricter — AI pipeline is costly)
+    const userRl = checkRateLimit(request, "process", user.uid);
+    if (!userRl.allowed) return rateLimitResponse(userRl);
+
+    const rlHeaders = rateLimitHeaders(
+      userRl.remaining < ipRl.remaining ? userRl : ipRl
+    );
+
     // Validate
     const { batchId } = ProcessBatchSchema.parse(body);
 
     // Verify batch
     const batch = await getJobBatch(batchId);
     if (!batch) {
-      return handleApiError(new Error("Batch not found"), "batch/process");
+      return handleApiError(new Error("Batch not found"), "batch/process", rlHeaders);
     }
     verifyOwnership(batch.userId, user.uid);
 
     // ── Re-entry guard ──
     if (batch.status === "COMPLETE") {
-      return handleApiError(new Error("Batch already processed"), "batch/process");
+      return handleApiError(new Error("Batch already processed"), "batch/process", rlHeaders);
     }
 
     if (!PROCESSABLE_STATUSES.has(batch.status)) {
       return handleApiError(
         new Error(`Batch is currently in "${batch.status}" state and cannot be reprocessed`),
-        "batch/process"
+        "batch/process",
+        rlHeaders
       );
     }
 
@@ -87,12 +96,16 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    return apiSuccess({
-      message: "Processing started. Monitor status via GET /api/batch/{batchId}",
-      batchId,
-    });
+    return apiSuccess(
+      {
+        message: "Processing started. Monitor status via GET /api/batch/{batchId}",
+        batchId,
+      },
+      200,
+      rlHeaders
+    );
   } catch (err) {
-    return handleApiError(err, "batch/process");
+    return handleApiError(err, "batch/process", rateLimitHeaders(ipRl));
   }
 }
 

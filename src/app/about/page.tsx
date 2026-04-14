@@ -221,9 +221,9 @@ function StatCard({ value, suffix, label, color, delay }: {
   return (
     <Reveal delay={delay}>
       <div ref={ref} className="group relative text-center p-6 sm:p-8">
-        <div className={`text-4xl sm:text-5xl lg:text-6xl font-extrabold font-display bg-gradient-to-r ${color} bg-clip-text text-transparent`}>
+        <div className={`text-3xl sm:text-5xl lg:text-6xl font-extrabold font-display bg-gradient-to-r ${color} bg-clip-text text-transparent`}>
           {count}
-          <span className="text-2xl sm:text-3xl lg:text-4xl">{suffix}</span>
+          <span className="text-xl sm:text-3xl lg:text-4xl">{suffix}</span>
         </div>
         <p className="mt-2 text-xs sm:text-sm font-semibold uppercase tracking-[0.15em] text-ink-muted">{label}</p>
         {/* Animated underline */}
@@ -601,7 +601,7 @@ export default function AboutPage() {
                 Ready to make hiring fair?
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-ink-light font-medium leading-7" style={{ fontSize: "clamp(0.9rem, 1vw + 0.5rem, 1.15rem)" }}>
-                Start your first bias analysis in under 30 seconds. No signup
+                Start your first bias analysis in under 40 seconds. Signup
                 required. No cost. Just transparent, explainable results.
               </p>
               <div className="mt-8 sm:mt-10">

@@ -128,7 +128,7 @@ export default function Hero() {
             </div>
 
             <p className="mt-3 text-ink-faint text-xs sm:text-sm font-medium animate-fade-in-up animation-delay-300">
-              No signup required · Takes 30 seconds
+              Signup required · Takes 30 seconds
             </p>
 
             {/* Stats — animated counters */}
@@ -142,7 +142,7 @@ export default function Hero() {
                 { value: counts[2], suffix: "%", prefix: "", label: "Explainable Decisions" },
               ].map((stat) => (
                 <div key={stat.label} className="text-center lg:text-left">
-                  <div className="text-brand text-xl sm:text-2xl font-extrabold tracking-tight font-display tabular-nums">
+                  <div className="text-brand text-lg sm:text-2xl font-extrabold tracking-tight font-display tabular-nums">
                     {stat.prefix}
                     {stat.value}
                     {stat.suffix}

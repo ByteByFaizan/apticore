@@ -20,44 +20,59 @@ export interface ApiResponse<T = unknown> {
 
 /**
  * Return a successful API response.
+ * Accepts optional extra headers (e.g. rate limit headers).
  */
-export function apiSuccess<T>(data: T, status = 200): NextResponse<ApiResponse<T>> {
+export function apiSuccess<T>(
+  data: T,
+  status = 200,
+  extraHeaders?: Record<string, string>
+): NextResponse<ApiResponse<T>> {
   return NextResponse.json(
     { success: true, data, error: null },
-    { status }
+    { status, headers: extraHeaders }
   );
 }
 
 /**
  * Return an error API response.
+ * Accepts optional extra headers (e.g. rate limit headers, Retry-After).
  */
-export function apiError(message: string, status = 500) {
+export function apiError(
+  message: string,
+  status = 500,
+  extraHeaders?: Record<string, string>
+) {
   return NextResponse.json(
     { success: false as const, data: null, error: message },
-    { status }
+    { status, headers: extraHeaders }
   );
 }
 
 /**
  * Centralized error handler — catches AuthError, ZodError, and generic errors.
  * Use in every API route catch block.
+ * Accepts optional extra headers to attach to error response.
  */
-export function handleApiError(error: unknown, context?: string) {
+export function handleApiError(
+  error: unknown,
+  context?: string,
+  extraHeaders?: Record<string, string>
+) {
   // Auth errors (401/403)
   if (error instanceof AuthError) {
     logger.warn("Auth error", { context, message: error.message, status: error.statusCode });
-    return apiError(error.message, error.statusCode);
+    return apiError(error.message, error.statusCode, extraHeaders);
   }
 
   // Validation errors (Zod)
   if (error instanceof ZodError) {
     const messages = error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; ");
     logger.warn("Validation error", { context, errors: messages });
-    return apiError(messages, 400);
+    return apiError(messages, 400, extraHeaders);
   }
 
   // Generic errors
   const message = error instanceof Error ? error.message : "Internal server error";
   logger.error("Unhandled API error", { context, error: message });
-  return apiError("Internal server error", 500);
+  return apiError("Internal server error", 500, extraHeaders);
 }
