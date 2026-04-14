@@ -144,9 +144,9 @@ CREATED → UPLOADING → PARSING → ANALYZING_BIAS_BEFORE → ANONYMIZING → 
 ┌─────────────────────────────────────────────────────────────────┐
 │                        FRONTEND (Next.js 15)                    │
 │  Landing Page → Login/Signup → Dashboard (Overview/Candidates/  │
-│  Bias Report) → About Page                                     │
-│  State: Zustand · Charts: Recharts · Fonts: Plus Jakarta Sans, │
-│  DM Sans, Lobster · Styling: Tailwind CSS 4                    │
+│  Bias Report) → About Page                                      │
+│  State: Zustand · Charts: Recharts · Fonts: Plus Jakarta Sans,  │
+│  DM Sans, Lobster · Styling: Tailwind CSS 4                     │
 └────────────────────────┬────────────────────────────────────────┘
                          │ REST API (Bearer auth)
 ┌────────────────────────▼────────────────────────────────────────┐
@@ -155,11 +155,11 @@ CREATED → UPLOADING → PARSING → ANALYZING_BIAS_BEFORE → ANONYMIZING → 
 │  → Pipeline Orchestrator (after()) → Response                   │
 └──────┬──────────┬───────────────┬───────────────────────────────┘
        │          │               │
-┌──────▼───┐ ┌───▼────────┐ ┌───▼──────────────────────────────┐
+┌──────▼───┐ ┌───▼────────┐ ┌───▼───────────────────────────────┐
 │ Firebase │ │  Firestore  │ │ Google Gemini API                │
-│   Auth   │ │  (Database) │ │  · gemini-2.5-pro (parsing, JD) │
-│ Email +  │ │  Users      │ │  · gemini-2.5-flash (explain)   │
-│ Google   │ │  JobBatches  │ │  · gemini-embedding-001 (embed) │
+│   Auth   │ │  (Database) │ │  · gemini-2.5-pro (parsing, JD)  │
+│ Email +  │ │  Users      │ │  · gemini-2.5-flash (explain)    │
+│ Google   │ │  JobBatches │ │  · gemini-embedding-001 (embed)  │
 │ OAuth    │ │  └Candidates│ │                                  │
 │          │ │  └BiasReport│ └──────────────────────────────────┘
 │          │ │  └ResumeFiles│
