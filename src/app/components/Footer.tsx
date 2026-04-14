@@ -11,7 +11,7 @@ const footerLinks = {
   Company: [
     { label: "About", href: "/about" },
     { label: "Impact", href: "/#impact" },
-    { label: "Privacy Policy", href: "#" },
+    { label: "Privacy Policy", href: "/privacy" },
   ],
 };
 

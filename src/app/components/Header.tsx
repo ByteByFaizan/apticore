@@ -4,6 +4,21 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store";
 import { useRouter, usePathname } from "next/navigation";
+import {
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword,
+} from "firebase/auth";
+import { auth } from "@/lib/firebase";
+
+/* ── Password strength rules ── */
+const PASSWORD_RULES = [
+  { key: "length",  label: "8+ characters",       test: (p: string) => p.length >= 8 },
+  { key: "upper",   label: "Uppercase letter",     test: (p: string) => /[A-Z]/.test(p) },
+  { key: "lower",   label: "Lowercase letter",     test: (p: string) => /[a-z]/.test(p) },
+  { key: "number",  label: "Number",               test: (p: string) => /[0-9]/.test(p) },
+  { key: "special", label: "Special character (!@#$...)", test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+] as const;
 
 const navLinks = [
   { label: "How it works", href: "/#how-it-works", sectionId: "how-it-works" },
@@ -22,6 +37,17 @@ export default function Header() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
+
+  // Change password state
+  const [showChangePw, setShowChangePw] = useState(false);
+  const [cpCurrent, setCpCurrent] = useState("");
+  const [cpNew, setCpNew] = useState("");
+  const [cpConfirm, setCpConfirm] = useState("");
+  const [cpLoading, setCpLoading] = useState(false);
+  const [cpError, setCpError] = useState<string | null>(null);
+  const [cpSuccess, setCpSuccess] = useState(false);
+  const [cpShowCurrent, setCpShowCurrent] = useState(false);
+  const [cpShowNew, setCpShowNew] = useState(false);
 
   // Initialize auth state
   useEffect(() => {
@@ -96,6 +122,68 @@ export default function Header() {
     setDropdownOpen(false);
     setMobileOpen(false);
     router.push("/");
+  };
+
+  /* ── Change password logic ── */
+  const isPasswordProvider = user?.providerData?.some(
+    (p) => p.providerId === "password"
+  );
+
+  const openChangePw = () => {
+    setCpCurrent("");
+    setCpNew("");
+    setCpConfirm("");
+    setCpError(null);
+    setCpSuccess(false);
+    setCpShowCurrent(false);
+    setCpShowNew(false);
+    setDropdownOpen(false);
+    setMobileOpen(false);
+    setShowChangePw(true);
+  };
+
+  const handleChangePw = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCpError(null);
+
+    const failing = PASSWORD_RULES.filter((r) => !r.test(cpNew));
+    if (failing.length > 0) {
+      setCpError(`Password must include: ${failing.map((r) => r.label).join(", ")}`);
+      return;
+    }
+    if (cpNew !== cpConfirm) {
+      setCpError("New passwords do not match.");
+      return;
+    }
+    if (cpCurrent === cpNew) {
+      setCpError("New password must differ from current password.");
+      return;
+    }
+
+    setCpLoading(true);
+    try {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser || !firebaseUser.email) throw new Error("No user");
+      const cred = EmailAuthProvider.credential(firebaseUser.email, cpCurrent);
+      await reauthenticateWithCredential(firebaseUser, cred);
+      await updatePassword(firebaseUser, cpNew);
+      setCpSuccess(true);
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "code" in err) {
+        const code = (err as { code: string }).code;
+        if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+          setCpError("Current password is incorrect.");
+        } else if (code === "auth/too-many-requests") {
+          setCpError("Too many attempts. Try again later.");
+        } else {
+          setCpError("Something went wrong. Please try again.");
+        }
+      } else {
+        setCpError("Something went wrong. Please try again.");
+      }
+    } finally {
+      setCpLoading(false);
+    }
   };
 
   const isLinkActive = useCallback(
@@ -205,6 +293,22 @@ export default function Header() {
                           {user.email}
                         </p>
                       </div>
+                      {/* Change password */}
+                      {isPasswordProvider && (
+                        <button
+                          onClick={openChangePw}
+                          className="group flex w-full items-center gap-2.5 px-4 py-2.5 text-[13.5px] font-medium text-ink-light bg-transparent hover:bg-brand/[0.04] hover:text-brand transition-all duration-200"
+                        >
+                          <span className="flex items-center justify-center w-6 h-6 rounded-md bg-surface-alt group-hover:bg-brand/10 transition-colors duration-200">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70 group-hover:opacity-100 transition-opacity">
+                              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                          </span>
+                          Change password
+                        </button>
+                      )}
+                      {/* Log out */}
                       <button
                         onClick={handleLogout}
                         className="group flex w-full items-center gap-2.5 px-4 py-2.5 text-[13.5px] font-medium text-ink-light bg-transparent hover:bg-red-50 hover:text-red-600 transition-all duration-200"
@@ -410,6 +514,20 @@ export default function Header() {
                   </p>
                 </div>
               </div>
+              {/* Change password (mobile) */}
+              {isPasswordProvider && (
+                <button
+                  onClick={openChangePw}
+                  className="group flex w-full items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-medium text-white/60 hover:text-white hover:bg-white/[0.07] transition-all duration-200 active:scale-[0.98]"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  Change password
+                </button>
+              )}
+              {/* Log out */}
               <button
                 onClick={handleLogout}
                 className="group flex w-full items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-medium text-white/60 hover:text-[#ef4444] hover:bg-[#ef4444]/[0.08] transition-all duration-200 active:scale-[0.98] overflow-hidden"
@@ -450,6 +568,110 @@ export default function Header() {
           )}
         </div>
       </div>
+      {/* ══════════ Change Password Modal ══════════ */}
+      {showChangePw && (
+        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center sm:p-4">
+          <div
+            className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
+            onClick={() => !cpLoading && setShowChangePw(false)}
+          />
+          <div
+            className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-sm p-6 sm:p-8"
+            style={{ animation: "login-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}
+          >
+            {/* Close */}
+            <button
+              onClick={() => !cpLoading && setShowChangePw(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full hover:bg-surface-alt flex items-center justify-center transition-colors cursor-pointer"
+              aria-label="Close"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            {/* Icon */}
+            <div className="w-14 h-14 bg-brand/5 rounded-full flex items-center justify-center mx-auto mb-5">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </div>
+
+            <h3 className="text-xl font-display font-bold text-ink text-center mb-1">Change password</h3>
+            <p className="text-ink-muted text-sm text-center mb-6">Enter your current password then choose a new one</p>
+
+            {cpError && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{cpError}</div>
+            )}
+
+            {cpSuccess ? (
+              <div className="text-center">
+                <div className="w-14 h-14 bg-emerald/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <p className="text-ink font-medium mb-1">Password updated!</p>
+                <p className="text-ink-muted text-sm mb-6">Your password has been changed successfully.</p>
+                <button onClick={() => setShowChangePw(false)} className="w-full rounded-full bg-brand py-3 text-sm font-medium text-white hover:bg-brand-dark transition-colors cursor-pointer">Done</button>
+              </div>
+            ) : (
+              <form onSubmit={handleChangePw} className="space-y-4">
+                {/* Current password */}
+                <div>
+                  <label htmlFor="cp-current" className="block text-[13px] font-medium text-brand/70 mb-1.5">Current password</label>
+                  <div className="relative">
+                    <input id="cp-current" type={cpShowCurrent ? "text" : "password"} value={cpCurrent} onChange={(e) => setCpCurrent(e.target.value)} required className="w-full rounded-xl border border-brand/[0.08] bg-white py-3 pl-4 pr-11 text-[15px] text-ink placeholder:text-brand/40 shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:border-accent/30 focus:shadow-[0_0_0_3px_rgba(91,160,143,0.08)] transition-all duration-300" placeholder="••••••••" />
+                    <button type="button" onClick={() => setCpShowCurrent(!cpShowCurrent)} className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-brand/30 hover:text-brand/50 transition-colors cursor-pointer" tabIndex={-1}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        {cpShowCurrent ? (<><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></>) : (<><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>)}
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                {/* New password */}
+                <div>
+                  <label htmlFor="cp-new" className="block text-[13px] font-medium text-brand/70 mb-1.5">New password</label>
+                  <div className="relative">
+                    <input id="cp-new" type={cpShowNew ? "text" : "password"} value={cpNew} onChange={(e) => setCpNew(e.target.value)} required minLength={8} className="w-full rounded-xl border border-brand/[0.08] bg-white py-3 pl-4 pr-11 text-[15px] text-ink placeholder:text-brand/40 shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:border-accent/30 focus:shadow-[0_0_0_3px_rgba(91,160,143,0.08)] transition-all duration-300" placeholder="Letters, numbers & symbols" />
+                    <button type="button" onClick={() => setCpShowNew(!cpShowNew)} className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-brand/30 hover:text-brand/50 transition-colors cursor-pointer" tabIndex={-1}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        {cpShowNew ? (<><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></>) : (<><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>)}
+                      </svg>
+                    </button>
+                  </div>
+                  {cpNew.length > 0 && (
+                    <div className="mt-2 space-y-1.5">
+                      <div className="flex gap-1">
+                        {PASSWORD_RULES.map((rule) => (<div key={rule.key} className={`h-1 flex-1 rounded-full transition-all duration-300 ${rule.test(cpNew) ? "bg-emerald" : "bg-brand/[0.08]"}`} />))}
+                      </div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                        {PASSWORD_RULES.map((rule) => { const pass = rule.test(cpNew); return (<span key={rule.key} className={`text-[11px] transition-colors duration-200 ${pass ? "text-emerald" : "text-ink-faint"}`}>{pass ? "✓" : "○"} {rule.label}</span>); })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Confirm */}
+                <div>
+                  <label htmlFor="cp-confirm" className="block text-[13px] font-medium text-brand/70 mb-1.5">Confirm new password</label>
+                  <input id="cp-confirm" type="password" value={cpConfirm} onChange={(e) => setCpConfirm(e.target.value)} required minLength={8} className={`w-full rounded-xl border bg-white py-3 px-4 text-[15px] text-ink placeholder:text-brand/40 shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:border-accent/30 focus:shadow-[0_0_0_3px_rgba(91,160,143,0.08)] transition-all duration-300 ${cpConfirm.length > 0 && cpConfirm !== cpNew ? "border-red-300" : cpConfirm.length > 0 && cpConfirm === cpNew ? "border-emerald/30" : "border-brand/[0.08]"}`} placeholder="Re-enter new password" />
+                  {cpConfirm.length > 0 && cpConfirm !== cpNew && (<p className="text-[11px] text-red-500 mt-1">Passwords do not match</p>)}
+                </div>
+
+                {/* Submit */}
+                <button type="submit" disabled={cpLoading} className="w-full rounded-full bg-brand py-3 text-[15px] font-medium text-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_4px_12px_rgba(28,63,58,0.15)] hover:bg-brand-dark hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-300 cursor-pointer relative">
+                  <span className={cpLoading ? "opacity-0" : ""}>Update password</span>
+                  {cpLoading && (<div className="absolute inset-0 flex items-center justify-center"><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /></div>)}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
