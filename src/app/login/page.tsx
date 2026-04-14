@@ -44,7 +44,7 @@ function LoginPageContent() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMeState] = useState(false);
+  const [rememberMe, setRememberMeState] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

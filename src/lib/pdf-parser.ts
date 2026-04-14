@@ -130,6 +130,7 @@ export async function extractTextFromDOCX(buffer: Buffer): Promise<{
 
 /**
  * Detect file type from buffer magic bytes.
+ * Validates ZIP contents to distinguish DOCX from other ZIP formats (XLSX, PPTX, etc.)
  */
 export function detectFileType(buffer: Buffer): "pdf" | "docx" | "txt" | "unknown" {
   if (buffer.length < 4) return "unknown";
@@ -139,50 +140,98 @@ export function detectFileType(buffer: Buffer): "pdf" | "docx" | "txt" | "unknow
     return "pdf";
   }
 
-  // DOCX magic bytes: PK (ZIP signature)
+  // PK magic bytes → ZIP-based format (could be DOCX, XLSX, PPTX, plain ZIP)
+  // Check for "[Content_Types].xml" marker which OOXML has near the start
   if (buffer[0] === 0x50 && buffer[1] === 0x4b) {
-    return "docx";
+    // Quick heuristic: scan first ~2000 bytes for "word/" which only DOCX has
+    const head = buffer.subarray(0, Math.min(buffer.length, 2000)).toString("binary");
+    if (head.includes("word/")) {
+      return "docx";
+    }
+    // If it's a ZIP but doesn't look like DOCX, return unknown
+    // (prevents XLSX/PPTX/ZIP being misidentified and failing with confusing errors)
+    return "unknown";
   }
 
-  // If no magic byte but the buffer is purely text/ascii/utf8
-  // We'll optimistically treat it as txt if someone uploads a .txt file
+  // UTF-8 BOM (EF BB BF) → treat as TXT
+  if (buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
+    return "txt";
+  }
+
+  // If no recognizable magic bytes → optimistically treat as text
   return "txt";
 }
 
 /**
+ * Sanitize extracted text — remove null bytes and normalize whitespace.
+ */
+function sanitizeText(raw: string): string {
+  return raw
+    .replace(/\0/g, "")        // strip null bytes (common in corrupt PDFs)
+    .replace(/\r\n/g, "\n")    // normalize line endings
+    .replace(/\r/g, "\n")
+    .trim();
+}
+
+/**
  * Extract text from a file buffer (auto-detect type).
+ * Uses magic bytes first, falls back to fileName extension.
  */
 export async function extractText(buffer: Buffer, fileName?: string): Promise<{
   text: string;
   status: "SUCCESS" | "PARSE_FAILED" | "NEEDS_OCR";
+  fileType: "pdf" | "docx" | "txt" | "unknown";
   error?: string;
 }> {
   if (!buffer || buffer.length === 0) {
     return {
       text: "",
       status: "PARSE_FAILED",
+      fileType: "unknown",
       error: "Empty file buffer",
     };
   }
 
   let fileType = detectFileType(buffer);
 
-  // Fallback for TXT files which don't have distinct magic bytes
-  if (fileType === "txt" && fileName && !fileName.toLowerCase().endsWith(".txt")) {
-    fileType = "unknown";
+  // If magic bytes say "txt" but extension disagrees → use extension as tiebreaker
+  if (fileType === "txt" && fileName) {
+    const lowerName = fileName.toLowerCase();
+    if (lowerName.endsWith(".pdf")) fileType = "pdf";
+    else if (lowerName.endsWith(".docx")) fileType = "docx";
+    else if (!lowerName.endsWith(".txt")) fileType = "unknown";
+  }
+
+  // If magic bytes gave "unknown" but extension is known → trust extension
+  if (fileType === "unknown" && fileName) {
+    const lowerName = fileName.toLowerCase();
+    if (lowerName.endsWith(".pdf")) fileType = "pdf";
+    else if (lowerName.endsWith(".docx")) fileType = "docx";
+    else if (lowerName.endsWith(".txt")) fileType = "txt";
   }
 
   switch (fileType) {
-    case "pdf":
-      return extractTextFromPDF(buffer);
-    case "docx":
-      return extractTextFromDOCX(buffer);
-    case "txt":
-      return { text: buffer.toString("utf8"), status: "SUCCESS" };
+    case "pdf": {
+      const result = await extractTextFromPDF(buffer);
+      return { ...result, fileType, text: sanitizeText(result.text) };
+    }
+    case "docx": {
+      const result = await extractTextFromDOCX(buffer);
+      return { ...result, fileType, text: sanitizeText(result.text) };
+    }
+    case "txt": {
+      // Handle UTF-8 BOM
+      let text = buffer.toString("utf8");
+      if (text.charCodeAt(0) === 0xfeff) {
+        text = text.slice(1);
+      }
+      return { text: sanitizeText(text), status: "SUCCESS", fileType };
+    }
     default:
       return {
         text: "",
         status: "PARSE_FAILED",
+        fileType: "unknown",
         error: "Unsupported file type. Only PDF, DOCX, and TXT are accepted.",
       };
   }

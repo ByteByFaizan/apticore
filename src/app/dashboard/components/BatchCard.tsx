@@ -239,34 +239,47 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
 
       {/* ── Pipeline Progress Bar — visible during active processing ── */}
       {isProcessing && currentStepIdx >= 0 && (
-        <div className="mt-4 pt-3 border-t border-edge/50">
+        <div className="mt-4 pt-3 border-t border-edge/50 animate-fade-in-up">
+          {/* Bars row — all equal height, no labels inside */}
           <div className="flex items-center gap-1">
             {PIPELINE_STEPS.map((step, i) => {
               const isDone = i < currentStepIdx;
               const isCurrent = i === currentStepIdx;
               return (
-                <div key={step} className="flex-1 flex flex-col items-center gap-1">
-                  <div
-                    className={`h-1.5 w-full rounded-full transition-all duration-500 ${
-                      isDone
-                        ? "bg-emerald"
-                        : isCurrent
-                        ? "bg-brand animate-pulse"
-                        : "bg-gray-100"
-                    }`}
-                  />
-                  {isCurrent && (
-                    <span className="text-[9px] text-brand font-semibold whitespace-nowrap">
-                      {cfg.label}
-                    </span>
-                  )}
-                </div>
+                <div
+                  key={step}
+                  className={`flex-1 h-1.5 rounded-full transition-all duration-500 ${
+                    isDone
+                      ? "bg-emerald"
+                      : isCurrent
+                      ? "bg-brand animate-pulse"
+                      : "bg-gray-100"
+                  }`}
+                />
               );
             })}
           </div>
-          <p className="text-[10px] text-ink-faint mt-1.5">
-            Step {currentStepIdx + 1} of {PIPELINE_STEPS.length}
-          </p>
+          {/* Label row — separate from bars to prevent alignment shift */}
+          <div className="flex items-center justify-between mt-1.5">
+            <span className="text-[9px] text-brand font-semibold">
+              {cfg.label}
+            </span>
+            <span className="text-[10px] text-ink-faint">
+              Step {currentStepIdx + 1} of {PIPELINE_STEPS.length}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Completion indicator — smooth transition from processing */}
+      {batch.status === "COMPLETE" && (
+        <div className="mt-3 pt-3 border-t border-edge/50">
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 w-full rounded-full bg-emerald" />
+            <span className="text-[10px] text-emerald font-semibold whitespace-nowrap">
+              ✓ Done
+            </span>
+          </div>
         </div>
       )}
     </div>

@@ -103,6 +103,7 @@ interface BatchState {
   error: string | null;
 
   fetchBatches: () => Promise<void>;
+  pollBatches: () => Promise<void>; // silent refresh — no loading flash
   fetchBatch: (batchId: string) => Promise<void>;
   fetchCandidates: (batchId: string, view?: string) => Promise<void>;
   fetchBiasReport: (batchId: string) => Promise<void>;
@@ -127,6 +128,32 @@ export const useBatchStore = create<BatchState>((set, get) => ({
       set({ batches: data.batches, loading: false });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : "Failed to fetch batches", loading: false });
+    }
+  },
+
+  // Silent poll — updates batches without setting loading (prevents card flicker)
+  pollBatches: async () => {
+    try {
+      const data = await apiFetch<{ batches: JobBatch[]; total: number }>("/api/batch/list");
+      // Preserve optimistic status: if local batch is PARSING but server still says CREATED,
+      // keep the local (optimistic) status until server catches up
+      set((state) => {
+        const merged = data.batches.map((serverBatch) => {
+          const localBatch = state.batches.find((b) => b.id === serverBatch.id);
+          if (
+            localBatch &&
+            localBatch.status === "PARSING" &&
+            (serverBatch.status === "CREATED" || serverBatch.status === "UPLOADING")
+          ) {
+            // Server hasn't caught up yet — keep optimistic status
+            return { ...serverBatch, status: localBatch.status as typeof serverBatch.status };
+          }
+          return serverBatch;
+        });
+        return { batches: merged };
+      });
+    } catch {
+      // Silent fail for polls — don't flash errors
     }
   },
 
@@ -199,7 +226,7 @@ export const useBatchStore = create<BatchState>((set, get) => ({
   },
 
   processBatch: async (batchId: string) => {
-    set({ loading: true, error: null });
+    set({ error: null });
     try {
       await apiFetch("/api/batch/process", {
         method: "POST",
@@ -207,16 +234,16 @@ export const useBatchStore = create<BatchState>((set, get) => ({
         body: JSON.stringify({ batchId }),
       });
       // Optimistic: update batch status in UI immediately so user sees progress
+      // Do NOT call fetchBatches() here — server pipeline runs in after(),
+      // so immediate fetch would overwrite optimistic PARSING back to CREATED
+      // and kill polling. Let the auto-poll handle subsequent updates.
       set((state) => ({
         batches: state.batches.map((b) =>
           b.id === batchId ? { ...b, status: "PARSING" as const, error: undefined } : b
         ),
-        loading: false,
       }));
-      // Refresh batch list — triggers auto-poll since batch now has active status
-      get().fetchBatches();
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : "Failed to process batch", loading: false });
+      set({ error: err instanceof Error ? err.message : "Failed to process batch" });
     }
   },
 

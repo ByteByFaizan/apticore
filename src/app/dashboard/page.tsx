@@ -15,9 +15,9 @@ import CandidateList from "./components/CandidateList";
 import BiasReportView from "./components/BiasReportView";
 import CreateBatchModal from "./components/CreateBatchModal";
 
-/* Statuses that indicate active processing */
+/* Statuses that indicate active processing — triggers auto-polling */
 const ACTIVE_STATUSES = new Set([
-  "PARSING", "ANALYZING_BIAS_BEFORE", "ANONYMIZING",
+  "UPLOADING", "PARSING", "ANALYZING_BIAS_BEFORE", "ANONYMIZING",
   "MATCHING", "RANKING", "EXPLAINING", "ANALYZING_BIAS_AFTER",
 ]);
 
@@ -31,6 +31,7 @@ export default function DashboardPage() {
     loading,
     error,
     fetchBatches,
+    pollBatches,
     fetchBatch,
     fetchCandidates,
     fetchBiasReport,
@@ -48,14 +49,15 @@ export default function DashboardPage() {
   }, [fetchBatches]);
 
   // Auto-poll while any batch is actively processing
+  // Uses pollBatches (silent) to avoid layout flicker from loading state
   const hasActiveBatch = batches.some((b) => ACTIVE_STATUSES.has(b.status));
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (hasActiveBatch) {
       pollRef.current = setInterval(() => {
-        fetchBatches();
-      }, 3000);
+        pollBatches();
+      }, 2000); // 2s for snappier updates
     }
     return () => {
       if (pollRef.current) {
@@ -63,7 +65,7 @@ export default function DashboardPage() {
         pollRef.current = null;
       }
     };
-  }, [hasActiveBatch, fetchBatches]);
+  }, [hasActiveBatch, pollBatches]);
 
   // View batch: switch tab immediately, fetch data in background
   const handleViewBatch = useCallback(

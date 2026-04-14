@@ -2,6 +2,29 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 
+const ACCEPTED_EXTENSIONS = [".pdf", ".docx", ".txt"];
+const ACCEPTED_MIME_TYPES = new Set([
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+]);
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB — mirrors backend
+const MAX_FILES = 50;
+
+function isValidFile(f: File): boolean {
+  const ext = f.name.toLowerCase();
+  return (
+    ACCEPTED_EXTENSIONS.some((e) => ext.endsWith(e)) ||
+    ACCEPTED_MIME_TYPES.has(f.type)
+  );
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 interface CreateBatchModalProps {
   open: boolean;
   onClose: () => void;
@@ -15,6 +38,7 @@ export default function CreateBatchModal({
 }: CreateBatchModalProps) {
   const [jdText, setJdText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [fileErrors, setFileErrors] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -50,17 +74,50 @@ export default function CreateBatchModal({
     }
   }, [jdText, files, onCreate, onClose]);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    const dropped = Array.from(e.dataTransfer.files).filter(
-      (f) =>
-        f.type === "application/pdf" ||
-        f.name.endsWith(".docx") ||
-        f.name.endsWith(".doc")
-    );
-    if (dropped.length > 0) setFiles((prev) => [...prev, ...dropped]);
-  }, []);
+  const addFiles = useCallback(
+    (incoming: File[]) => {
+      const errors: string[] = [];
+      const valid: File[] = [];
+
+      for (const f of incoming) {
+        if (!isValidFile(f)) {
+          errors.push(`"${f.name}" — unsupported format (use PDF, DOCX, or TXT)`);
+        } else if (f.size > MAX_FILE_SIZE) {
+          errors.push(`"${f.name}" — too large (${formatSize(f.size)}, max 10 MB)`);
+        } else if (f.size === 0) {
+          errors.push(`"${f.name}" — file is empty`);
+        } else {
+          valid.push(f);
+        }
+      }
+
+      setFileErrors(errors);
+
+      if (valid.length > 0) {
+        setFiles((prev) => {
+          const combined = [...prev, ...valid];
+          if (combined.length > MAX_FILES) {
+            setFileErrors((e) => [
+              ...e,
+              `Only ${MAX_FILES} files allowed per batch — ${combined.length - MAX_FILES} file(s) dropped`,
+            ]);
+            return combined.slice(0, MAX_FILES);
+          }
+          return combined;
+        });
+      }
+    },
+    []
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      addFiles(Array.from(e.dataTransfer.files));
+    },
+    [addFiles]
+  );
 
   const removeFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
@@ -175,20 +232,18 @@ export default function CreateBatchModal({
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
               <p className="text-sm text-ink-muted mb-1">
-                Drag & drop PDF/DOCX files here
+                Drag & drop PDF, DOCX, or TXT files here
               </p>
               <label className="text-xs text-accent font-medium cursor-pointer hover:underline">
                 or browse files
                 <input
                   type="file"
                   multiple
-                  accept=".pdf,.docx,.doc"
-                  onChange={(e) =>
-                    setFiles((prev) => [
-                      ...prev,
-                      ...Array.from(e.target.files || []),
-                    ])
-                  }
+                  accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                  onChange={(e) => {
+                    addFiles(Array.from(e.target.files || []));
+                    e.target.value = ""; // allow re-selecting same file
+                  }}
                   className="sr-only"
                 />
               </label>
@@ -238,7 +293,24 @@ export default function CreateBatchModal({
                 ))}
                 <p className="text-xs text-ink-muted">
                   {files.length} file{files.length > 1 ? "s" : ""} selected
+                  <span className="text-ink-faint ml-1">
+                    (max {MAX_FILES})
+                  </span>
                 </p>
+              </div>
+            )}
+
+            {/* Validation errors */}
+            {fileErrors.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {fileErrors.map((err, i) => (
+                  <p
+                    key={i}
+                    className="text-xs text-red-500 flex items-center gap-1"
+                  >
+                    <span>⚠</span> {err}
+                  </p>
+                ))}
               </div>
             )}
           </div>
