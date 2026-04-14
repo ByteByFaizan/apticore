@@ -21,6 +21,30 @@ import type {
 const MAX_BATCH_WRITES = 500; // Firestore limit per batch commit
 
 /**
+ * Recursively strip `undefined` values from an object.
+ * Firestore rejects documents containing `undefined`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function stripUndefined<T extends Record<string, any>>(obj: T): T {
+  const clean = {} as Record<string, unknown>;
+  for (const [key, val] of Object.entries(obj)) {
+    if (val === undefined) continue;
+    if (val !== null && typeof val === "object" && !Array.isArray(val) && !(val instanceof Date)) {
+      clean[key] = stripUndefined(val as Record<string, unknown>);
+    } else if (Array.isArray(val)) {
+      clean[key] = val.map((item) =>
+        item !== null && typeof item === "object" && !Array.isArray(item)
+          ? stripUndefined(item as Record<string, unknown>)
+          : item
+      );
+    } else {
+      clean[key] = val;
+    }
+  }
+  return clean as T;
+}
+
+/**
  * Safely execute a Firestore query.
  * Returns null/empty on NOT_FOUND (database not created yet).
  * Prevents 500 errors when Firestore isn't initialized.
@@ -131,11 +155,11 @@ export async function saveCandidateResult(
     .collection("candidates")
     .doc();
 
-  await ref.set({
+  await ref.set(stripUndefined({
     batchId,
     ...result,
     createdAt: new Date().toISOString(),
-  });
+  }));
 
   return ref.id;
 }
@@ -174,11 +198,11 @@ export async function saveCandidateResults(
         .collection("candidates")
         .doc();
 
-      batch.set(ref, {
+      batch.set(ref, stripUndefined({
         batchId,
         ...result,
         createdAt: new Date().toISOString(),
-      });
+      }));
     }
 
     await batch.commit();
