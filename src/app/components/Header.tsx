@@ -25,6 +25,7 @@ const navLinks = [
   { label: "Features", href: "/#features", sectionId: "features" },
   { label: "Impact", href: "/#impact", sectionId: "impact" },
   { label: "About", href: "/about", sectionId: "" },
+  { label: "Privacy Policy", href: "/privacy", sectionId: "" },
 ];
 
 export default function Header() {
@@ -193,6 +194,9 @@ export default function Header() {
       }
       if (link.href === "/about") {
         return pathname === "/about";
+      }
+      if (link.href === "/privacy") {
+        return pathname === "/privacy";
       }
       return false;
     },
