@@ -16,7 +16,7 @@
 [![Gemini AI](https://img.shields.io/badge/Gemini_AI-2.5-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-[Live Demo](https://apticore.vercel.app) · [Documentation](./docs/) · [Report Bug](https://github.com/ByteByFaizan/apticore/issues)
+[Live Demo](https://apticore-six.vercel.app) · [Documentation](./docs/) · [Report Bug](https://github.com/ByteByFaizan/apticore/issues)
 
 </div>
 
