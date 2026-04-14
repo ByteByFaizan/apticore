@@ -88,11 +88,11 @@ export default function CandidateList({
     <section ref={ref}>
       {/* Section header */}
       <div
-        className="flex items-center justify-between mb-5"
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 sm:mb-5"
         style={revealStyle(isVisible, 0, 0)}
       >
         <div>
-          <h2 className="text-ink text-lg font-semibold font-display tracking-tight">
+          <h2 className="text-ink text-base sm:text-lg font-semibold font-display tracking-tight">
             {activeBatch.jdRequirements?.title || "Candidates"}
           </h2>
           <p className="text-xs text-ink-muted mt-0.5">
@@ -137,7 +137,7 @@ export default function CandidateList({
           description="This batch doesn't have any processed candidates yet."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5 sm:space-y-3">
           {candidates.map((candidate, i) => (
             <div key={candidate.id} style={revealStyle(isVisible, i, 0.08)}>
               <CandidateCard candidate={candidate} />

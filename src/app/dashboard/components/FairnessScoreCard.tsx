@@ -51,7 +51,7 @@ export default function FairnessScoreCard({
   return (
     <div
       ref={ref}
-      className="relative bg-white rounded-2xl border border-edge p-6 text-center overflow-hidden transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)]"
+      className="relative bg-white rounded-2xl border border-edge p-4 sm:p-6 text-center overflow-hidden transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)]"
     >
       {/* Background radial */}
       <div
@@ -59,14 +59,14 @@ export default function FairnessScoreCard({
       />
 
       <div className="relative">
-        <p className="text-[10px] text-ink-faint uppercase tracking-[0.15em] font-semibold mb-4">
+        <p className="text-[10px] text-ink-faint uppercase tracking-[0.15em] font-semibold mb-3 sm:mb-4">
           {label}
         </p>
 
         {/* Score ring — SVG progress circle */}
-        <div className="flex justify-center mb-3">
+        <div className="flex justify-center mb-2 sm:mb-3">
           <div
-            className="relative w-28 h-28 flex items-center justify-center"
+            className="relative w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center"
             style={{
               transform: isVisible ? "scale(1)" : "scale(0.8)",
               opacity: isVisible ? 1 : 0,
@@ -105,7 +105,7 @@ export default function FairnessScoreCard({
               />
             </svg>
             <span
-              className={`text-4xl font-bold font-display tabular-nums ${scoreColor}`}
+              className={`text-3xl sm:text-4xl font-bold font-display tabular-nums ${scoreColor}`}
             >
               {animated}
             </span>
@@ -117,7 +117,7 @@ export default function FairnessScoreCard({
           {qualLabel.label}
         </p>
 
-        <p className="text-sm text-ink-muted">{sublabel}</p>
+        <p className="text-xs sm:text-sm text-ink-muted">{sublabel}</p>
       </div>
     </div>
   );

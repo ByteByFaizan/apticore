@@ -85,12 +85,12 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
       {/* ── Overall Insight Banner ── */}
       <div
         ref={insightReveal.ref}
-        className={`mb-6 rounded-2xl border bg-gradient-to-r ${improvementBg} p-5 transition-all duration-500`}
+        className={`mb-4 sm:mb-6 rounded-2xl border bg-gradient-to-r ${improvementBg} p-4 sm:p-5 transition-all duration-500`}
         style={revealStyle(insightReveal.isVisible, 0, 0)}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
           {/* Shield icon */}
-          <div className="shrink-0 w-12 h-12 rounded-full bg-white/80 backdrop-blur border border-edge/50 flex items-center justify-center">
+          <div className="shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/80 backdrop-blur border border-edge/50 flex items-center justify-center">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={improvementColor}>
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               {improvement > 0 && <path d="M9 12l2 2 4-4" />}
@@ -99,12 +99,12 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2 flex-wrap">
-              <span className={`text-2xl font-bold font-display tabular-nums ${improvementColor}`}>
+              <span className={`text-xl sm:text-2xl font-bold font-display tabular-nums ${improvementColor}`}>
                 {improvement > 0 ? "+" : ""}{improvement} pts
               </span>
               <span className="text-sm text-ink-muted">fairness improvement</span>
             </div>
-            <p className="text-sm text-ink-light mt-0.5">
+            <p className="text-xs sm:text-sm text-ink-light mt-0.5 leading-relaxed">
               {improvement > 15
                 ? "Significant bias reduction — AptiCore's anonymization produced a substantially fairer selection."
                 : improvement > 5
@@ -122,7 +122,7 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
       {/* ── Fairness Score Comparison ── */}
       <div
         ref={scoresReveal.ref}
-        className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-6 sm:mb-8"
       >
         <div style={revealStyle(scoresReveal.isVisible, 0, 0.05)}>
           <FairnessScoreCard
@@ -145,12 +145,12 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
       </div>
 
       {/* ── Improvements ── */}
-      <section ref={improvementsReveal.ref} className="mb-8">
+      <section ref={improvementsReveal.ref} className="mb-6 sm:mb-8">
         <div
           className="flex items-center gap-4 mb-5"
           style={revealStyle(improvementsReveal.isVisible, 0, 0)}
         >
-          <h2 className="text-ink text-lg font-semibold font-display tracking-tight">
+          <h2 className="text-ink text-base sm:text-lg font-semibold font-display tracking-tight">
             Bias Reduction Breakdown
           </h2>
           <div className="flex-1 h-px bg-gradient-to-r from-edge to-transparent" />
@@ -183,7 +183,7 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
             return (
               <div
                 key={imp.metric}
-                className="bg-white rounded-xl border border-edge p-5 transition-all duration-300 hover:shadow-[0_4px_16px_rgba(28,63,58,0.04)]"
+                className="bg-white rounded-xl border border-edge p-4 sm:p-5 transition-all duration-300 hover:shadow-[0_4px_16px_rgba(28,63,58,0.04)]"
                 style={revealStyle(improvementsReveal.isVisible, i, 0.1)}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -203,10 +203,10 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
                   </span>
                 </div>
 
-                <p className="text-sm text-ink-light mb-3">{imp.description}</p>
+                <p className="text-xs sm:text-sm text-ink-light mb-3">{imp.description}</p>
 
                 {/* Before → After bars */}
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                   <div className="flex-1">
                     <p className="text-[10px] text-ink-faint font-medium mb-1">
                       Traditional · {clampedBefore}%
@@ -251,11 +251,11 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
 
       {/* ── How It Works — mini explainer ── */}
       <section className="mb-8">
-        <div className="bg-gradient-to-br from-[#1C3F3A] to-[#2A5A52] rounded-2xl p-6 text-white">
+        <div className="bg-gradient-to-br from-[#1C3F3A] to-[#2A5A52] rounded-2xl p-4 sm:p-6 text-white">
           <h3 className="text-sm font-semibold font-display tracking-tight mb-3 text-white/90">
             How AptiCore Reduces Bias
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {[
               { step: "1", title: "Detect", desc: "Analyze candidate pool for demographic patterns and unconscious bias signals" },
               { step: "2", title: "Anonymize", desc: "Strip names, gender, college names, and location — keep only skills & experience" },
@@ -284,7 +284,7 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
           className="flex items-center gap-4 mb-5"
           style={revealStyle(distributionReveal.isVisible, 0, 0)}
         >
-          <h2 className="text-ink text-lg font-semibold font-display tracking-tight">
+          <h2 className="text-ink text-base sm:text-lg font-semibold font-display tracking-tight">
             Distribution Analysis
           </h2>
           <div className="flex-1 h-px bg-gradient-to-r from-edge to-transparent" />
@@ -293,7 +293,7 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
         {/* Gender */}
         <div className="mb-6">
           <p className="text-[10px] text-ink-faint uppercase tracking-[0.15em] font-semibold mb-3">Gender Distribution</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div style={revealStyle(distributionReveal.isVisible, 0, 0.1)}>
               <DistributionChart
                 title="Traditional — Gender"
@@ -313,7 +313,7 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
         {/* College Tier */}
         <div className="mb-6">
           <p className="text-[10px] text-ink-faint uppercase tracking-[0.15em] font-semibold mb-3">College Tier</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div style={revealStyle(distributionReveal.isVisible, 2, 0.1)}>
               <DistributionChart
                 title="Traditional — College Tier"
@@ -334,7 +334,7 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
         {/* Location */}
         <div>
           <p className="text-[10px] text-ink-faint uppercase tracking-[0.15em] font-semibold mb-3">Location Type</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div style={revealStyle(distributionReveal.isVisible, 4, 0.1)}>
               <DistributionChart
                 title="Traditional — Location"

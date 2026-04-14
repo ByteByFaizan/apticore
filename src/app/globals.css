@@ -637,3 +637,261 @@ body {
     transform: scale(1);
   }
 }
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE FOUNDATION
+   ══════════════════════════════════════════════ */
+
+/* ── Fluid Typography Helpers ── */
+.text-fluid-hero {
+  font-size: clamp(2rem, 5vw + 1rem, 4rem);
+  line-height: 1.08;
+}
+
+.text-fluid-section {
+  font-size: clamp(1.5rem, 3vw + 0.5rem, 2.5rem);
+  line-height: 1.2;
+}
+
+.text-fluid-body {
+  font-size: clamp(0.875rem, 1vw + 0.5rem, 1.125rem);
+  line-height: 1.75;
+}
+
+/* ── Mobile Touch Utilities ── */
+@media (max-width: 640px) {
+  /* Remove tap highlight on mobile */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Safe area padding for notched devices */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* ── Horizontal Scroll Snap ── */
+.scroll-snap-x {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.scroll-snap-x::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-snap-item {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════
+   NEW INTERACTIVE ANIMATIONS
+   ══════════════════════════════════════════════ */
+
+/* ▸ Shimmer text effect */
+@keyframes shimmer-text {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--color-ink) 0%,
+    var(--color-ink) 40%,
+    var(--color-accent) 50%,
+    var(--color-ink) 60%,
+    var(--color-ink) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer-text 3s linear infinite;
+}
+
+/* ▸ Slide in from left */
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ▸ Slide in from right */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ▸ Score ring draw animation */
+@keyframes score-ring-draw {
+  from {
+    stroke-dashoffset: 283;
+  }
+}
+
+.animate-score-ring {
+  animation: score-ring-draw 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ▸ Glow pulse */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(91, 160, 143, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(91, 160, 143, 0.3);
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* ▸ Scroll progress bar */
+.scroll-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-brand), var(--color-accent), var(--color-emerald));
+  z-index: 9999;
+  transform-origin: left;
+  transition: transform 0.1s linear;
+  pointer-events: none;
+}
+
+/* ▸ Animated gradient border */
+@keyframes gradient-border-spin {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  background: linear-gradient(
+    60deg,
+    var(--color-brand),
+    var(--color-accent),
+    var(--color-emerald),
+    var(--color-accent),
+    var(--color-brand)
+  );
+  background-size: 300% 300%;
+  animation: gradient-border-spin 4s ease infinite;
+  border-radius: inherit;
+  opacity: 0.6;
+  filter: blur(4px);
+}
+
+/* ▸ Particle canvas */
+.particle-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ══════════════════════════════════════════════
+   ACCESSIBILITY — REDUCED MOTION
+   ══════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-float-gentle,
+  .animate-scroll-logos,
+  .animate-gradient-shift,
+  .animate-pulse-dot,
+  .animate-glow-pulse,
+  .animate-shimmer-text {
+    animation: none !important;
+  }
+
+  .particle-canvas {
+    display: none;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   MOBILE MODAL — BOTTOM SHEET
+   ══════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .modal-bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    max-height: 92vh;
+    border-radius: 1.25rem 1.25rem 0 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-bottom-sheet-enter {
+    animation: slide-up-sheet 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@keyframes slide-up-sheet {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

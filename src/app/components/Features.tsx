@@ -75,11 +75,13 @@ const features = [
   },
 ];
 
-/* ── Tilt card ── */
+/* ── Tilt card — disabled on touch devices ── */
 function TiltCard({ children }: { children: React.ReactNode }) {
   const cardRef = useRef<HTMLDivElement>(null);
 
   const handleMouse = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    // Disable tilt on touch devices
+    if ("ontouchstart" in window) return;
     const el = cardRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -90,6 +92,10 @@ function TiltCard({ children }: { children: React.ReactNode }) {
     const rotateX = ((y - centerY) / centerY) * -4;
     const rotateY = ((x - centerX) / centerX) * 4;
     el.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
+
+    // Update spotlight CSS variables
+    el.style.setProperty("--mouse-x", `${x}px`);
+    el.style.setProperty("--mouse-y", `${y}px`);
   }, []);
 
   const handleLeave = useCallback(() => {
@@ -103,7 +109,7 @@ function TiltCard({ children }: { children: React.ReactNode }) {
       ref={cardRef}
       onMouseMove={handleMouse}
       onMouseLeave={handleLeave}
-      className="transition-[box-shadow,border-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+      className="transition-[box-shadow,border-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] h-full"
       style={{ transformStyle: "preserve-3d", willChange: "transform" }}
     >
       {children}
@@ -113,19 +119,19 @@ function TiltCard({ children }: { children: React.ReactNode }) {
 
 export default function Features() {
   return (
-    <section id="features" className="py-16 sm:py-24">
-      <div className="max-w-[1100px] mx-auto px-4">
+    <section id="features" className="py-12 sm:py-16 md:py-24">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-6">
         <SectionHeader
           eyebrow="Features"
           title="Built for Transparency. Powered by Gemini."
           subtitle="Every component engineered to make hiring decisions fair, fast, and fully explainable."
         />
 
-        <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="mt-8 sm:mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {features.map((feature, i) => (
             <RevealOnScroll key={feature.title} delay={i * 100}>
               <TiltCard>
-                <div className="group p-6 border border-edge/80 bg-white h-full hover:border-brand/20 hover:shadow-[0_8px_30px_rgba(28,63,58,0.06)] relative overflow-hidden cursor-default">
+                <div className="group p-5 sm:p-6 border border-edge/80 bg-white h-full hover:border-brand/20 hover:shadow-[0_8px_30px_rgba(28,63,58,0.06)] relative overflow-hidden cursor-default rounded-xl">
                   {/* Gradient overlay on hover */}
                   <div className="absolute inset-0 bg-gradient-to-br from-surface/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   {/* Spotlight glow following cursor */}
@@ -133,7 +139,7 @@ export default function Features() {
                   {/* Bottom accent line */}
                   <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand to-accent scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-left" />
 
-                  <div className="mb-4 inline-flex rounded-lg bg-surface-alt p-2.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:bg-brand group-hover:text-white group-hover:scale-110 group-hover:shadow-[0_4px_16px_rgba(28,63,58,0.2)] relative z-10 text-brand">
+                  <div className="mb-3 sm:mb-4 inline-flex rounded-lg bg-surface-alt p-2 sm:p-2.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:bg-brand group-hover:text-white group-hover:scale-110 group-hover:shadow-[0_4px_16px_rgba(28,63,58,0.2)] relative z-10 text-brand">
                     <feature.icon />
                   </div>
                   <h3 className="text-ink text-sm font-semibold leading-6 relative z-10">

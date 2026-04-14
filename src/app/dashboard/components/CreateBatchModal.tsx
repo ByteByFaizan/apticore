@@ -128,7 +128,7 @@ export default function CreateBatchModal({
   const isReady = jdText.trim().length >= 50 && files.length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/30 backdrop-blur-sm"
@@ -141,14 +141,18 @@ export default function CreateBatchModal({
       {/* Modal */}
       <div
         ref={modalRef}
-        className="relative bg-white w-full max-w-lg rounded-2xl border border-edge shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden"
+        className="relative bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl border border-edge shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col"
         style={{
           animation: "fade-in-up 0.35s cubic-bezier(0.16,1,0.3,1) both",
         }}
       >
+        {/* Mobile drag handle */}
+        <div className="sm:hidden flex justify-center pt-2 pb-1">
+          <div className="w-10 h-1 rounded-full bg-edge" />
+        </div>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-edge">
-          <h2 className="text-lg font-semibold text-ink font-display tracking-tight">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-edge">
+          <h2 className="text-base sm:text-lg font-semibold text-ink font-display tracking-tight">
             Create New Batch
           </h2>
           <button
@@ -172,7 +176,7 @@ export default function CreateBatchModal({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-5">
+        <div className="px-4 sm:px-6 py-4 sm:py-5 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
           {/* JD Input */}
           <div>
             <label className="block text-sm font-medium text-ink mb-1.5">
@@ -183,7 +187,7 @@ export default function CreateBatchModal({
               onChange={(e) => setJdText(e.target.value)}
               placeholder="Paste the full job description here…"
               rows={5}
-              className="w-full border border-edge rounded-xl px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:border-accent/40 focus:shadow-[0_0_0_3px_rgba(91,160,143,0.1)] transition-all resize-none"
+              className="w-full border border-edge rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:border-accent/40 focus:shadow-[0_0_0_3px_rgba(91,160,143,0.1)] transition-all resize-none"
             />
             <p className="text-xs text-ink-faint mt-1">
               {jdText.trim().length < 50 ? (
@@ -210,7 +214,7 @@ export default function CreateBatchModal({
               }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 ${
+              className={`border-2 border-dashed rounded-xl p-4 sm:p-6 text-center transition-all duration-200 ${
                 dragOver
                   ? "border-accent bg-accent/5"
                   : "border-edge hover:border-ink-faint/30"
@@ -251,7 +255,7 @@ export default function CreateBatchModal({
 
             {/* File list */}
             {files.length > 0 && (
-              <div className="mt-3 space-y-1.5">
+              <div className="mt-3 space-y-1.5 max-h-32 sm:max-h-40 overflow-y-auto">
                 {files.map((file, i) => (
                   <div
                     key={`${file.name}-${i}`}
@@ -317,7 +321,7 @@ export default function CreateBatchModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-edge bg-surface/30">
+        <div className="flex items-center justify-end gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-edge bg-surface/30">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm text-ink-muted hover:text-ink transition-colors cursor-pointer rounded-lg hover:bg-surface-alt"
@@ -327,7 +331,7 @@ export default function CreateBatchModal({
           <button
             onClick={handleCreate}
             disabled={creating || !isReady}
-            className="px-6 py-2.5 rounded-full bg-brand text-white text-sm font-medium hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-[0.97]"
+            className="px-5 sm:px-6 py-2.5 rounded-full bg-brand text-white text-sm font-medium hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-[0.97]"
           >
             {creating ? (
               <span className="flex items-center gap-2">

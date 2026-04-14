@@ -39,17 +39,17 @@ export default function DistributionChart({
   }));
 
   return (
-    <div className="bg-white rounded-2xl border border-edge p-5 transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)]">
-      <p className="text-[10px] text-ink-faint uppercase tracking-[0.15em] font-semibold mb-4">
+    <div className="bg-white rounded-2xl border border-edge p-3 sm:p-5 transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)]">
+      <p className="text-[10px] text-ink-faint uppercase tracking-[0.15em] font-semibold mb-2 sm:mb-4">
         {title}
       </p>
 
-      <div className="h-[200px] w-full">
+      <div className="h-[160px] sm:h-[200px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
             margin={{ top: 4, right: 0, left: -20, bottom: 0 }}
-            barSize={28}
+            barSize={20}
           >
             <CartesianGrid
               strokeDasharray="3 3"

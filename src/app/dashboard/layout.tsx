@@ -128,12 +128,12 @@ export default function DashboardLayout({
           </div>
 
           {/* Center: Nav Links (desktop) */}
-          <nav className="hidden sm:flex items-center gap-1 bg-surface-alt/60 rounded-full px-1 py-1">
+          <nav className="hidden sm:flex items-center gap-1 bg-surface-alt/60 rounded-full px-1 py-1 max-w-full overflow-x-auto scroll-snap-x">
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.key}
                 onClick={() => setView(item.key)}
-                className={`relative px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-300 cursor-pointer ${
+                className={`relative px-3 md:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full transition-all duration-300 cursor-pointer whitespace-nowrap scroll-snap-item ${
                   selectedView === item.key
                     ? "bg-white text-brand shadow-sm"
                     : "text-ink-muted hover:text-ink"
@@ -205,7 +205,7 @@ export default function DashboardLayout({
       </header>
 
       {/* ── Content ── */}
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <main className="max-w-[1400px] mx-auto px-3 sm:px-6 py-4 sm:py-6 md:py-8">
         {children}
       </main>
     </div>

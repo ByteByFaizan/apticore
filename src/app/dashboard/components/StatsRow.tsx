@@ -97,11 +97,11 @@ export default function StatsRow({ batches, resetKey }: StatsRowProps) {
   ];
 
   return (
-    <div ref={ref} className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div ref={ref} className="flex sm:grid sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8 scroll-snap-x sm:overflow-visible pb-1 sm:pb-0 -mx-3 px-3 sm:mx-0 sm:px-0">
       {stats.map((stat, i) => (
         <div
           key={stat.label}
-          className="group relative bg-white rounded-2xl p-5 border border-edge hover:border-brand/20 transition-all duration-300 overflow-hidden stat-card-hover cursor-default"
+          className="group relative bg-white rounded-2xl p-4 sm:p-5 border border-edge hover:border-brand/20 transition-all duration-300 overflow-hidden stat-card-hover cursor-default min-w-[200px] sm:min-w-0 scroll-snap-item"
           style={revealStyle(isVisible, i, 0.1)}
         >
           {/* Gradient accent stripe */}
@@ -113,24 +113,24 @@ export default function StatsRow({ batches, resetKey }: StatsRowProps) {
           <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-brand/[0.03] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
           <div className="relative">
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-2.5 sm:gap-3 mb-2.5 sm:mb-3">
               <div
-                className={`w-10 h-10 rounded-xl ${stat.iconBg} flex items-center justify-center ${stat.iconColor} group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}
+                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl ${stat.iconBg} flex items-center justify-center ${stat.iconColor} group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}
               >
                 {stat.icon}
               </div>
-              <p className="text-ink-faint text-xs font-semibold tracking-wider uppercase">
+              <p className="text-ink-faint text-[10px] sm:text-xs font-semibold tracking-wider uppercase">
                 {stat.label}
               </p>
             </div>
 
-            <p className="text-ink text-[1.75rem] font-bold font-display tracking-tight leading-none tabular-nums">
+            <p className="text-ink text-xl sm:text-[1.75rem] font-bold font-display tracking-tight leading-none tabular-nums">
               {"prefix" in stat && stat.prefix}
               {stat.value}
               {stat.suffix}
             </p>
 
-            <p className="text-ink-muted text-xs mt-2">{stat.sub}</p>
+            <p className="text-ink-muted text-[10px] sm:text-xs mt-1.5 sm:mt-2">{stat.sub}</p>
           </div>
         </div>
       ))}

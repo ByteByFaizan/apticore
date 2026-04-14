@@ -21,13 +21,13 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
   const anon = candidate.anonymizedData;
 
   return (
-    <div className="group bg-white rounded-xl border border-edge hover:border-brand/20 p-5 transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)] hover:-translate-y-0.5">
-      <div className="flex items-start justify-between gap-4">
+    <div className="group bg-white rounded-xl border border-edge hover:border-brand/20 p-4 sm:p-5 transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)] hover:-translate-y-0.5">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
         {/* Left — Details */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-2.5">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-2.5 flex-wrap">
             {/* Rank badge */}
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-brand/10 to-accent/10 text-brand text-sm font-bold shrink-0">
+            <span className="inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-brand/10 to-accent/10 text-brand text-xs sm:text-sm font-bold shrink-0">
               #{candidate.rank}
             </span>
             <h3 className="text-sm font-semibold text-ink">
@@ -48,7 +48,7 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
           </div>
 
           {/* Skills */}
-          <div className="flex flex-wrap gap-1.5 mb-3">
+          <div className="flex flex-wrap gap-1 sm:gap-1.5 mb-2 sm:mb-3">
             {anon.skills.slice(0, 8).map((skill) => (
               <span
                 key={skill}
@@ -71,11 +71,11 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
         </div>
 
         {/* Right — Score ring */}
-        <div className="ml-4 text-center shrink-0">
+        <div className="sm:ml-4 text-center shrink-0 flex sm:flex-col items-center sm:items-center gap-2 sm:gap-0">
           <div
-            className={`w-16 h-16 rounded-full border-[3.5px] flex items-center justify-center ${scoreColor.ring} ${scoreColor.bg} transition-all duration-300 group-hover:scale-105`}
+            className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full border-[3px] sm:border-[3.5px] flex items-center justify-center ${scoreColor.ring} ${scoreColor.bg} transition-all duration-300 group-hover:scale-105`}
           >
-            <span className={`text-lg font-bold tabular-nums ${scoreColor.text}`}>
+            <span className={`text-base sm:text-lg font-bold tabular-nums ${scoreColor.text}`}>
               {candidate.matchScore}
             </span>
           </div>
@@ -86,11 +86,11 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
       </div>
 
       {/* Skill breakdown */}
-      <div className="mt-4 pt-4 border-t border-edge/50">
+      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-edge/50">
         <p className="text-[10px] text-ink-faint font-semibold mb-2 uppercase tracking-[0.1em]">
           Skill Breakdown
         </p>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1 sm:gap-1.5">
           {candidate.skillBreakdown.map((s) => (
             <span
               key={s.skill}
@@ -113,7 +113,7 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
       </div>
 
       {/* ── Before/After Toggle — Reveal what was anonymized ── */}
-      <div className="mt-4 pt-4 border-t border-edge/50">
+      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-edge/50">
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -141,8 +141,8 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
         </button>
 
         {showOriginal && raw && (
-          <div className="mt-3 p-4 bg-gradient-to-br from-amber-50/60 to-orange-50/30 rounded-xl border border-amber-100 animate-fade-in-up">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="mt-3 p-3 sm:p-4 bg-gradient-to-br from-amber-50/60 to-orange-50/30 rounded-xl border border-amber-100 animate-fade-in-up">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
               {/* Name */}
               <div>
                 <p className="text-[9px] text-ink-faint uppercase tracking-wider font-semibold mb-0.5">Name</p>

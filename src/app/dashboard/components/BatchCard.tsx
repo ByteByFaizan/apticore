@@ -82,13 +82,13 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
   return (
     <div
       onClick={() => onView(batch.id)}
-      className="group bg-white rounded-xl border border-edge hover:border-brand/20 p-5 cursor-pointer transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)] hover:-translate-y-0.5 active:translate-y-0"
+      className="group bg-white rounded-xl border border-edge hover:border-brand/20 p-4 sm:p-5 cursor-pointer transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)] hover:-translate-y-0.5 active:translate-y-0"
     >
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
         {/* Left — Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2.5 mb-1.5">
-            <h3 className="text-sm font-semibold text-ink truncate">
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap mb-1.5">
+            <h3 className="text-ink text-sm sm:text-base font-semibold font-display tracking-tight truncate max-w-[200px] sm:max-w-[260px]">
               {batch.jdRequirements?.title || "Pending Analysis"}
             </h3>
 
@@ -119,11 +119,11 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
 
           {/* Required skills preview */}
           {batch.jdRequirements?.requiredSkills && batch.jdRequirements.requiredSkills.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
+            <div className="flex flex-wrap gap-1 mt-2 overflow-x-auto pb-1">
               {batch.jdRequirements.requiredSkills.slice(0, 5).map((skill) => (
                 <span
                   key={skill}
-                  className="px-2 py-0.5 rounded-full bg-brand/5 text-[10px] text-brand/70 font-medium"
+                  className="px-2 py-0.5 rounded-full bg-brand/5 text-[10px] text-brand/70 font-medium whitespace-nowrap"
                 >
                   {skill}
                 </span>
@@ -138,7 +138,7 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
         </div>
 
         {/* Right — Score + Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-2">
           {batch.fairnessScoreBefore != null &&
             batch.fairnessScoreAfter != null && (
               <div className="text-right hidden sm:block">
@@ -153,87 +153,86 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
               </div>
             )}
 
-          {/* Process button — for new batches */}
-          {canProcess && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onProcess(batch.id);
-              }}
-              className="px-4 py-1.5 rounded-full bg-brand text-white text-xs font-medium hover:bg-brand-dark transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md active:scale-95"
-            >
-              Process
-            </button>
-          )}
-
-          {/* Retry button — for failed batches */}
-          {canRetry && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onRetry(batch.id);
-              }}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-500 text-white text-xs font-medium hover:bg-amber-600 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md active:scale-95"
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
+            {batch.status === "COMPLETE" && onView && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onView(batch.id);
+                }}
+                className="px-3 py-1.5 rounded-full bg-gray-100 text-ink text-xs font-medium hover:bg-gray-200 transition-all"
               >
-                <polyline points="23 4 23 10 17 10" />
-                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-              </svg>
-              Retry
-            </button>
-          )}
+                View
+              </button>
+            )}
 
-          {/* Delete button — not during active processing */}
-          {canDelete && (
-            <button
-              onClick={handleDelete}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer active:scale-95 ${
-                confirmDelete
-                  ? "bg-red-500 text-white shadow-sm hover:bg-red-600"
-                  : "text-ink-faint hover:text-red-500 hover:bg-red-50"
-              }`}
-              title={confirmDelete ? "Click again to confirm" : "Delete batch"}
-            >
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            {/* Process button — for new batches */}
+            {canProcess && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onProcess(batch.id);
+                }}
+                className="px-4 py-1.5 rounded-full bg-brand text-white text-xs font-medium hover:bg-brand-dark transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md active:scale-95"
               >
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              </svg>
-              {confirmDelete ? "Confirm" : ""}
-            </button>
-          )}
+                Process
+              </button>
+            )}
 
-          {/* Chevron */}
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-ink-faint group-hover:text-ink-muted group-hover:translate-x-0.5 transition-all duration-200 shrink-0"
-          >
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
+            {/* Retry button — for failed batches */}
+            {canRetry && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRetry(batch.id);
+                }}
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-brand text-white text-[11px] sm:text-xs font-semibold hover:bg-brand-dark transition-all duration-200 shadow-sm hover:shadow cursor-pointer active:scale-[0.97]"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="23 4 23 10 17 10" />
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                </svg>
+                Retry
+              </button>
+            )}
+
+            {/* Delete button — not during active processing */}
+            {canDelete && (
+              <button
+                onClick={handleDelete}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer active:scale-95 ${
+                  confirmDelete
+                    ? "bg-red-500 text-white shadow-sm hover:bg-red-600"
+                    : "text-ink-faint hover:text-red-500 hover:bg-red-50"
+                }`}
+                title={confirmDelete ? "Click again to confirm" : "Delete batch"}
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+                {confirmDelete ? "Confirm" : ""}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -241,7 +240,7 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
       {isProcessing && currentStepIdx >= 0 && (
         <div className="mt-4 pt-3 border-t border-edge/50 animate-fade-in-up">
           {/* Bars row — all equal height, no labels inside */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto">
             {PIPELINE_STEPS.map((step, i) => {
               const isDone = i < currentStepIdx;
               const isCurrent = i === currentStepIdx;
@@ -273,8 +272,8 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
 
       {/* Completion indicator — smooth transition from processing */}
       {batch.status === "COMPLETE" && (
-        <div className="mt-3 pt-3 border-t border-edge/50">
-          <div className="flex items-center gap-2">
+        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-edge/60">
+          <div className="flex flex-wrap gap-1 sm:gap-1.5">
             <div className="h-1.5 w-full rounded-full bg-emerald" />
             <span className="text-[10px] text-emerald font-semibold whitespace-nowrap">
               ✓ Done

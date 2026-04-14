@@ -51,6 +51,11 @@ export default function HowItWorks() {
   const [animKey, setAnimKey] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Touch/swipe state
+  const touchStartRef = useRef<number>(0);
+  const touchEndRef = useRef<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const goTo = useCallback((index: number) => {
     setActive(index);
     setAnimKey((k) => k + 1);
@@ -71,12 +76,35 @@ export default function HowItWorks() {
     };
   }, []);
 
+  // Swipe handler for mobile
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartRef.current = e.targetTouches[0].clientX;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    touchEndRef.current = e.targetTouches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    const diff = touchStartRef.current - touchEndRef.current;
+    const minSwipe = 50;
+    if (Math.abs(diff) < minSwipe) return;
+
+    if (diff > 0) {
+      // Swipe left → next
+      goTo((active + 1) % phases.length);
+    } else {
+      // Swipe right → previous
+      goTo((active - 1 + phases.length) % phases.length);
+    }
+  }, [active, goTo]);
+
   const activePhase = phases[active];
 
   return (
     <section id="how-it-works" className="border-t border-b border-edge">
-      <div className="max-w-[1100px] mx-auto px-4">
-        <div className="py-16 sm:py-24">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-6">
+        <div className="py-12 sm:py-16 md:py-24">
           <SectionHeader
             eyebrow="How it works"
             title="Reveal → Remove → Prove"
@@ -84,15 +112,21 @@ export default function HowItWorks() {
             center={false}
           />
 
-          {/* Phase cards */}
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Phase cards — swipeable on mobile */}
+          <div
+            ref={containerRef}
+            className="mt-8 sm:mt-12 grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
             {phases.map((phase, index) => {
               const isActive = active === index;
               return (
                 <RevealOnScroll key={phase.title} delay={index * 100}>
                   <div
                     onClick={() => goTo(index)}
-                    className={`group relative p-6 flex flex-col gap-3 border cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden ${isActive
+                    className={`group relative p-5 sm:p-6 flex flex-col gap-2 sm:gap-3 border cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden rounded-xl ${isActive
                         ? "bg-white border-brand/20 shadow-[0_8px_30px_rgba(28,63,58,0.08)] -translate-y-1"
                         : "bg-surface/30 border-edge/80 hover:border-brand/10 hover:bg-white/80 hover:shadow-sm"
                       }`}
@@ -116,7 +150,7 @@ export default function HowItWorks() {
 
                     {/* Phase number */}
                     <span
-                      className={`absolute top-4 right-4 text-2xl font-extrabold font-display tracking-tighter transition-colors duration-500 ${isActive ? "text-brand/15" : "text-ink/5"
+                      className={`absolute top-3 sm:top-4 right-3 sm:right-4 text-xl sm:text-2xl font-extrabold font-display tracking-tighter transition-colors duration-500 ${isActive ? "text-brand/15" : "text-ink/5"
                         }`}
                     >
                       {phase.number}
@@ -143,7 +177,7 @@ export default function HowItWorks() {
                     </p>
 
                     {/* Steps */}
-                    <ul className="mt-2 flex flex-col gap-1.5 relative z-10">
+                    <ul className="mt-1 sm:mt-2 flex flex-col gap-1 sm:gap-1.5 relative z-10">
                       {phase.steps.map((step, si) => (
                         <li
                           key={si}
@@ -177,14 +211,19 @@ export default function HowItWorks() {
             })}
           </div>
 
+          {/* Swipe hint on mobile */}
+          <p className="mt-3 text-center text-[11px] text-ink-faint font-medium md:hidden">
+            ← Swipe to navigate phases →
+          </p>
+
           {/* Live preview panel */}
           <RevealOnScroll>
-            <div className="mt-6 p-6 bg-white border border-edge/60 shadow-[0_2px_12px_rgba(28,63,58,0.04)] overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex items-center gap-4">
+            <div className="mt-4 sm:mt-6 p-4 sm:p-6 bg-white border border-edge/60 shadow-[0_2px_12px_rgba(28,63,58,0.04)] overflow-hidden rounded-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                <div className="flex items-center gap-3 sm:gap-4">
                   {/* Animated indicator */}
                   <div
-                    className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-extrabold font-display text-lg transition-all duration-500 shadow-lg"
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-white font-extrabold font-display text-base sm:text-lg transition-all duration-500 shadow-lg flex-shrink-0"
                     style={{
                       backgroundColor: activePhase.visual.color,
                       boxShadow: `0 4px 16px ${activePhase.visual.color}33`,
@@ -193,11 +232,11 @@ export default function HowItWorks() {
                     {activePhase.number}
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-ink-faint uppercase tracking-wider">
+                    <p className="text-[10px] sm:text-xs font-semibold text-ink-faint uppercase tracking-wider">
                       {activePhase.visual.label}
                     </p>
                     <p
-                      className="text-xl font-extrabold font-display tracking-tight transition-colors duration-300"
+                      className="text-lg sm:text-xl font-extrabold font-display tracking-tight transition-colors duration-300"
                       style={{ color: activePhase.visual.color }}
                     >
                       {activePhase.visual.value}
@@ -211,7 +250,7 @@ export default function HowItWorks() {
                     <button
                       key={i}
                       onClick={() => goTo(i)}
-                      className={`transition-all duration-300 rounded-full ${active === i
+                      className={`transition-all duration-300 rounded-full cursor-pointer ${active === i
                           ? "w-8 h-2 bg-brand"
                           : "w-2 h-2 bg-edge hover:bg-ink-faint"
                         }`}

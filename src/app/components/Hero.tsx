@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import ParticleBackground from "./ui/ParticleBackground";
 
 export default function Hero() {
   /* ── Animated counter hook ── */
@@ -56,13 +57,13 @@ export default function Hero() {
   }, []);
 
   return (
-    <section className="relative pt-28 pb-16 sm:pt-40 sm:pb-24 overflow-hidden">
+    <section className="relative pt-24 pb-12 sm:pt-32 sm:pb-20 md:pt-40 md:pb-24 overflow-hidden">
       {/* ── Background texture ── */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[700px] bg-gradient-radial from-brand/[0.04] to-transparent rounded-full blur-3xl" />
-        {/* Dot grid pattern */}
+        {/* Dot grid pattern — hidden on mobile for cleanliness */}
         <div
-          className="absolute top-20 right-10 w-48 h-48 opacity-[0.04]"
+          className="absolute top-20 right-10 w-48 h-48 opacity-[0.04] hidden sm:block"
           style={{
             backgroundImage:
               "radial-gradient(circle, #1C3F3A 1px, transparent 1px)",
@@ -70,7 +71,7 @@ export default function Hero() {
           }}
         />
         <div
-          className="absolute bottom-20 left-16 w-36 h-36 opacity-[0.03]"
+          className="absolute bottom-20 left-16 w-36 h-36 opacity-[0.03] hidden sm:block"
           style={{
             backgroundImage:
               "radial-gradient(circle, #1C3F3A 1px, transparent 1px)",
@@ -79,18 +80,23 @@ export default function Hero() {
         />
       </div>
 
-      <div className="relative max-w-[1100px] mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      {/* Particle Background — desktop only */}
+      <div className="hidden lg:block">
+        <ParticleBackground particleCount={35} connectionDistance={100} />
+      </div>
+
+      <div className="relative max-w-[1100px] mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
           {/* Left — Content */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-            <h1 className="max-w-[600px] text-ink text-4xl sm:text-5xl md:text-[64px] font-extrabold leading-tight md:leading-[1.08] tracking-tight font-display animate-fade-in-up text-balance">
+            <h1 className="max-w-[600px] text-ink text-fluid-hero font-extrabold tracking-tight font-display animate-fade-in-up text-balance">
               Hire on Skills,{" "}
               <span className="bg-gradient-to-r from-accent via-brand to-accent-dark bg-clip-text text-transparent animate-gradient-shift">
                 Not Stereotypes.
               </span>
             </h1>
 
-            <p className="mt-6 max-w-[506px] text-ink-light text-lg font-medium leading-7 animate-fade-in-up animation-delay-100">
+            <p className="mt-5 sm:mt-6 max-w-[506px] text-ink-light text-base sm:text-lg font-medium leading-7 animate-fade-in-up animation-delay-100">
               AptiCore detects, quantifies, and removes unconscious bias from
               your hiring pipeline — then{" "}
               <strong className="text-ink">proves</strong> the improvement with
@@ -98,10 +104,10 @@ export default function Hero() {
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-3 mt-8 animate-fade-in-up animation-delay-200">
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mt-6 sm:mt-8 animate-fade-in-up animation-delay-200 w-full sm:w-auto">
               <a
                 href="/dashboard"
-                className="group relative h-12 px-8 bg-brand hover:bg-brand-dark text-white rounded-full font-semibold text-[15px] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] inline-flex items-center gap-2.5 shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] hover:shadow-[0_8px_24px_rgba(28,63,58,0.3),0_0_0_4px_rgba(28,63,58,0.1)] hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
+                className="group relative h-11 sm:h-12 px-6 sm:px-8 bg-brand hover:bg-brand-dark text-white rounded-full font-semibold text-sm sm:text-[15px] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] inline-flex items-center gap-2.5 shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] hover:shadow-[0_8px_24px_rgba(28,63,58,0.3),0_0_0_4px_rgba(28,63,58,0.1)] hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                 <span className="relative z-10">Start Free Analysis</span>
@@ -121,27 +127,27 @@ export default function Hero() {
               </a>
             </div>
 
-            <p className="mt-3 text-ink-faint text-sm font-medium animate-fade-in-up animation-delay-300">
+            <p className="mt-3 text-ink-faint text-xs sm:text-sm font-medium animate-fade-in-up animation-delay-300">
               No signup required · Takes 30 seconds
             </p>
 
             {/* Stats — animated counters */}
             <div
               ref={counterRef}
-              className="flex gap-8 mt-8 pt-8 border-t border-edge animate-fade-in-up animation-delay-400"
+              className="flex flex-wrap justify-center lg:justify-start gap-6 sm:gap-8 mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-edge animate-fade-in-up animation-delay-400 w-full"
             >
               {[
                 { value: counts[0], suffix: "%", prefix: "+", label: "Fairness Improvement" },
                 { value: counts[1], suffix: "s", prefix: "<", label: "Per Resume" },
                 { value: counts[2], suffix: "%", prefix: "", label: "Explainable Decisions" },
               ].map((stat) => (
-                <div key={stat.label}>
-                  <div className="text-brand text-2xl font-extrabold tracking-tight font-display tabular-nums">
+                <div key={stat.label} className="text-center lg:text-left">
+                  <div className="text-brand text-xl sm:text-2xl font-extrabold tracking-tight font-display tabular-nums">
                     {stat.prefix}
                     {stat.value}
                     {stat.suffix}
                   </div>
-                  <div className="text-ink-faint text-xs font-medium mt-0.5">
+                  <div className="text-ink-faint text-[10px] sm:text-xs font-medium mt-0.5">
                     {stat.label}
                   </div>
                 </div>
@@ -152,51 +158,51 @@ export default function Hero() {
           {/* Right — Dashboard Mockup */}
           <div
             ref={mockupRef}
-            className="relative animate-fade-in-up animation-delay-300 max-w-[560px] mx-auto lg:mx-0"
+            className="relative animate-fade-in-up animation-delay-300 max-w-[560px] mx-auto lg:mx-0 w-full"
           >
-            <div className="relative bg-surface-card border border-edge-light shadow-[0_4px_24px_rgba(28,63,58,0.06),0_20px_60px_rgba(28,63,58,0.08)] overflow-hidden animate-float-gentle">
+            <div className="relative bg-surface-card border border-edge-light shadow-[0_4px_24px_rgba(28,63,58,0.06),0_20px_60px_rgba(28,63,58,0.08)] overflow-hidden animate-float-gentle gradient-border rounded-xl">
               {/* Browser chrome */}
-              <div className="flex items-center gap-2 px-4 py-3 bg-surface-alt border-b border-edge-light">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#eab308]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" />
-                <div className="flex-1 ml-3 h-6 bg-white rounded border border-edge-light flex items-center px-3">
-                  <span className="text-[11px] text-ink-faint font-body">
+              <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-surface-alt border-b border-edge-light">
+                <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#ef4444]" />
+                <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#eab308]" />
+                <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#22c55e]" />
+                <div className="flex-1 ml-2 sm:ml-3 h-5 sm:h-6 bg-white rounded border border-edge-light flex items-center px-2 sm:px-3">
+                  <span className="text-[10px] sm:text-[11px] text-ink-faint font-body">
                     apticore.app/dashboard
                   </span>
                 </div>
               </div>
 
               {/* Mockup content */}
-              <div className="p-5 flex flex-col gap-3">
+              <div className="p-3 sm:p-5 flex flex-col gap-2 sm:gap-3">
                 {/* Score comparison */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-gradient-to-br from-[#fef2f2] to-[#fff7ed] border border-edge-light text-center group/card hover:shadow-md transition-shadow duration-300">
-                    <div className="text-[10px] font-semibold text-ink-faint uppercase tracking-wider mb-2">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                  <div className="p-3 sm:p-4 bg-gradient-to-br from-[#fef2f2] to-[#fff7ed] border border-edge-light text-center group/card hover:shadow-md transition-shadow duration-300 rounded-lg">
+                    <div className="text-[9px] sm:text-[10px] font-semibold text-ink-faint uppercase tracking-wider mb-1.5 sm:mb-2">
                       Before
                     </div>
-                    <div className="text-3xl font-extrabold font-display text-[#f97316] tracking-tight transition-transform duration-500 group-hover/card:scale-105">
+                    <div className="text-2xl sm:text-3xl font-extrabold font-display text-[#f97316] tracking-tight transition-transform duration-500 group-hover/card:scale-105">
                       58
                     </div>
-                    <div className="text-[10px] font-medium text-ink-muted mt-1">
+                    <div className="text-[9px] sm:text-[10px] font-medium text-ink-muted mt-1">
                       Fairness Score
                     </div>
                   </div>
-                  <div className="p-4 bg-gradient-to-br from-[#ecfdf5] to-[#e0f2fe] border border-edge-light text-center group/card hover:shadow-md transition-shadow duration-300">
-                    <div className="text-[10px] font-semibold text-ink-faint uppercase tracking-wider mb-2">
+                  <div className="p-3 sm:p-4 bg-gradient-to-br from-[#ecfdf5] to-[#e0f2fe] border border-edge-light text-center group/card hover:shadow-md transition-shadow duration-300 rounded-lg">
+                    <div className="text-[9px] sm:text-[10px] font-semibold text-ink-faint uppercase tracking-wider mb-1.5 sm:mb-2">
                       After
                     </div>
-                    <div className="text-3xl font-extrabold font-display text-emerald tracking-tight transition-transform duration-500 group-hover/card:scale-105">
+                    <div className="text-2xl sm:text-3xl font-extrabold font-display text-emerald tracking-tight transition-transform duration-500 group-hover/card:scale-105">
                       93
                     </div>
-                    <div className="text-[10px] font-semibold text-emerald mt-1">
+                    <div className="text-[9px] sm:text-[10px] font-semibold text-emerald mt-1">
                       ▲ +35 Points
                     </div>
                   </div>
                 </div>
 
                 {/* Candidate bars — animated width */}
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1 sm:gap-1.5">
                   {[
                     { id: "C-101", score: "92%", w: 92 },
                     { id: "C-204", score: "87%", w: 87 },
@@ -205,12 +211,12 @@ export default function Hero() {
                   ].map((c, i) => (
                     <div
                       key={c.id}
-                      className="group/bar flex items-center gap-3 px-3 py-2 bg-surface-alt hover:bg-surface-alt/80 transition-colors duration-200 cursor-default"
+                      className="group/bar flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 sm:py-2 bg-surface-alt hover:bg-surface-alt/80 transition-colors duration-200 cursor-default rounded"
                     >
-                      <span className="text-xs font-bold text-brand font-display min-w-[42px]">
+                      <span className="text-[10px] sm:text-xs font-bold text-brand font-display min-w-[36px] sm:min-w-[42px]">
                         {c.id}
                       </span>
-                      <div className="flex-1 h-1.5 bg-surface rounded-full overflow-hidden">
+                      <div className="flex-1 h-1 sm:h-1.5 bg-surface rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-accent to-emerald transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]"
                           style={{
@@ -219,7 +225,7 @@ export default function Hero() {
                           }}
                         />
                       </div>
-                      <span className="text-xs font-bold text-ink min-w-[32px] text-right tabular-nums">
+                      <span className="text-[10px] sm:text-xs font-bold text-ink min-w-[28px] sm:min-w-[32px] text-right tabular-nums">
                         {c.score}
                       </span>
                     </div>
