@@ -112,3 +112,6 @@ skills-lock.json
 .eslintcache
 .turbo/
 .npm/
+
+
+audits/
