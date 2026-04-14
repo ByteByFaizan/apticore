@@ -163,7 +163,7 @@ export default function Footer() {
 
               {gitHubOpen && (
                 <div
-                  className="absolute bottom-full mb-2 right-0 w-48 bg-white border border-edge-light rounded-xl shadow-[0_8px_32px_rgba(28,63,58,0.12)] py-1.5 z-50"
+                  className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-white border border-edge-light rounded-xl shadow-[0_8px_32px_rgba(28,63,58,0.12)] py-1.5 z-50"
                   style={{ animation: "linkedInPopIn 0.2s cubic-bezier(0.16,1,0.3,1)" }}
                 >
                   {gitHubProfiles.map((profile) => (
@@ -205,7 +205,7 @@ export default function Footer() {
               {/* Dropdown */}
               {linkedInOpen && (
                 <div
-                  className="absolute bottom-full mb-2 right-0 w-48 bg-white border border-edge-light rounded-xl shadow-[0_8px_32px_rgba(28,63,58,0.12)] py-1.5 z-50"
+                  className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-white border border-edge-light rounded-xl shadow-[0_8px_32px_rgba(28,63,58,0.12)] py-1.5 z-50"
                   style={{
                     animation: "linkedInPopIn 0.2s cubic-bezier(0.16,1,0.3,1)",
                   }}
