@@ -47,11 +47,13 @@ type RateLimitCategory = keyof typeof RATE_LIMITS;
 
 /**
  * Extract client IP from request.
+ * Prefer Vercel's verified header to prevent x-forwarded-for spoofing.
  */
 function getClientIP(request: NextRequest): string {
   return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ||
     request.headers.get("x-real-ip") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     "unknown"
   );
 }

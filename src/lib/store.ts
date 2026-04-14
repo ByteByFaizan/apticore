@@ -57,10 +57,11 @@ async function apiFetch<T = unknown>(path: string, options?: RequestInit): Promi
   const token = await useAuthStore.getState().getIdToken();
   if (!token) throw new Error("Not authenticated");
 
-  // Build headers — always include Authorization
-  // For FormData, don't set Content-Type (browser sets it with boundary)
+  // Build headers — always include Authorization + CSRF defense header
+  // X-Requested-With cannot be set by simple cross-origin requests (defense-in-depth)
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
+    "X-Requested-With": "XMLHttpRequest",
   };
 
   // Merge custom headers, but preserve Authorization

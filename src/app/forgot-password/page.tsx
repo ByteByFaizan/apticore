@@ -7,21 +7,27 @@ import { auth } from "@/lib/firebase";
 
 /* ═══════════════════════════════════════════════
    Firebase error → human-readable messages
+   Only surface errors user can act on.
+   user-not-found is intentionally omitted to
+   prevent email enumeration attacks.
    ═══════════════════════════════════════════════ */
-const FIREBASE_ERRORS: Record<string, string> = {
-  "auth/user-not-found": "No account found with this email. Check for typos.",
+const ACTIONABLE_ERRORS: Record<string, string> = {
   "auth/invalid-email": "Please enter a valid email address.",
   "auth/too-many-requests": "Too many attempts. Please wait a moment and try again.",
   "auth/network-request-failed": "Connection failed. Check your internet and try again.",
 };
 
-function getFirebaseError(error: unknown): string {
+function getActionableError(error: unknown): string | null {
   if (error && typeof error === "object" && "code" in error) {
     const code = (error as { code: string }).code;
-    return FIREBASE_ERRORS[code] || "Something went wrong. Please try again.";
+    // user-not-found → return null (show success to prevent enumeration)
+    if (code === "auth/user-not-found") return null;
+    return ACTIONABLE_ERRORS[code] || null;
   }
   return "Something went wrong. Please try again.";
 }
+
+const COOLDOWN_SECONDS = 60;
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -29,6 +35,7 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [formTilt, setFormTilt] = useState({ x: 0, y: 0 });
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -44,6 +51,15 @@ export default function ForgotPasswordPage() {
   useEffect(() => {
     document.title = "Reset Password — AptiCore";
   }, []);
+
+  /* ── Cooldown timer to prevent reset email spam ── */
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const interval = setInterval(() => {
+      setCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldown]);
 
   /* ── Mouse parallax for left panel ── */
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -70,17 +86,27 @@ export default function ForgotPasswordPage() {
   /* ── Send reset email via Firebase ── */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (cooldown > 0) return;
     setError(null);
     setIsLoading(true);
 
     try {
       await sendPasswordResetEmail(auth, email);
-      setSent(true);
     } catch (err) {
-      setError(getFirebaseError(err));
-    } finally {
-      setIsLoading(false);
+      // Only surface actionable errors (invalid-email, rate-limit, network)
+      // user-not-found is silently swallowed → always show success
+      const actionableError = getActionableError(err);
+      if (actionableError) {
+        setError(actionableError);
+        setIsLoading(false);
+        return;
+      }
     }
+
+    // Always show success (even if email not found) to prevent enumeration
+    setSent(true);
+    setCooldown(COOLDOWN_SECONDS);
+    setIsLoading(false);
   };
 
   /* ── Stagger helper ── */
@@ -398,10 +424,15 @@ export default function ForgotPasswordPage() {
 
               <div className="text-center mb-8">
                 <p className="text-ink-muted text-sm leading-relaxed max-w-xs mx-auto">
-                  Check your inbox at{" "}
-                  <span className="font-medium text-ink">{email}</span>{" "}
-                  for a password reset link. It may take a minute to arrive.
+                  If an account exists for{" "}
+                  <span className="font-medium text-ink">{email}</span>,
+                  you&apos;ll receive a password reset link shortly.
                 </p>
+                {cooldown > 0 && (
+                  <p className="text-ink-faint text-xs mt-2">
+                    You can resend in {cooldown}s
+                  </p>
+                )}
               </div>
 
               <div className="space-y-3">

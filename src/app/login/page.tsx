@@ -18,10 +18,10 @@ import { auth, googleProvider, setRememberMe } from "@/lib/firebase";
    ═══════════════════════════════════════════════ */
 const FIREBASE_ERRORS: Record<string, string> = {
   "auth/invalid-credential": "Incorrect email or password. Try again or reset your password.",
-  "auth/user-not-found": "No account found with this email. Check for typos or create an account.",
+  "auth/user-not-found": "Incorrect email or password. Try again or reset your password.",
   "auth/wrong-password": "Incorrect email or password. Try again or reset your password.",
   "auth/email-already-in-use": "This email is already registered. Sign in instead?",
-  "auth/weak-password": "Password must be at least 8 characters with letters and numbers.",
+  "auth/weak-password": "Password must be at least 8 characters with uppercase, lowercase, numbers, and special characters.",
   "auth/too-many-requests": "Too many attempts. Please wait 30 seconds.",
   "auth/popup-closed-by-user": "Google sign-in was cancelled. Try again when ready.",
   "auth/network-request-failed": "Connection failed. Check your internet and try again.",
@@ -34,6 +34,44 @@ function getFirebaseError(error: unknown): string {
     return FIREBASE_ERRORS[code] || "Something went wrong. Please try again.";
   }
   return "Something went wrong. Please try again.";
+}
+
+/* ═══════════════════════════════════════════════
+   Safe redirect — prevent open-redirect attacks
+   Only allow relative paths starting with /
+   ═══════════════════════════════════════════════ */
+function getSafeRedirect(url: string | null): string {
+  if (!url) return "/dashboard";
+  // Block absolute URLs, protocol-relative URLs (//evil.com), and javascript: URIs
+  if (
+    url.startsWith("//") ||
+    url.includes(":") ||
+    !url.startsWith("/")
+  ) {
+    return "/dashboard";
+  }
+  return url;
+}
+
+/* ═══════════════════════════════════════════════
+   Password strength validation
+   Enforces: 8+ chars, uppercase, lowercase,
+   number, and special character
+   ═══════════════════════════════════════════════ */
+const PASSWORD_RULES = [
+  { key: "length",  label: "8+ characters",       test: (p: string) => p.length >= 8 },
+  { key: "upper",   label: "Uppercase letter",     test: (p: string) => /[A-Z]/.test(p) },
+  { key: "lower",   label: "Lowercase letter",     test: (p: string) => /[a-z]/.test(p) },
+  { key: "number",  label: "Number",               test: (p: string) => /[0-9]/.test(p) },
+  { key: "special", label: "Special character (!@#$...)", test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+] as const;
+
+function getPasswordErrors(password: string): string[] {
+  return PASSWORD_RULES.filter((r) => !r.test(password)).map((r) => r.label);
+}
+
+function isPasswordStrong(password: string): boolean {
+  return PASSWORD_RULES.every((r) => r.test(password));
 }
 
 /* ═══════════════════════════════════════════════
@@ -73,7 +111,7 @@ function LoginPageContent() {
           auth.signOut().catch(() => {});
           return;
         }
-        const redirect = searchParams.get("redirect") ?? "/dashboard";
+        const redirect = getSafeRedirect(searchParams.get("redirect"));
         router.push(redirect);
       }
     });
@@ -124,7 +162,7 @@ function LoginPageContent() {
     try {
       await setRememberMe(rememberMe);
       await signInWithPopup(auth, googleProvider);
-      const redirect = searchParams.get("redirect") ?? "/dashboard";
+      const redirect = getSafeRedirect(searchParams.get("redirect"));
       router.push(redirect);
       return;
     } catch (err) {
@@ -145,6 +183,13 @@ function LoginPageContent() {
       await setRememberMe(rememberMe);
 
       if (mode === "signup") {
+        // Validate password strength before hitting Firebase
+        if (!isPasswordStrong(password)) {
+          const missing = getPasswordErrors(password);
+          setError(`Password must include: ${missing.join(", ")}`);
+          setIsLoading(false);
+          return;
+        }
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         if (name.trim()) {
           await updateProfile(cred.user, { displayName: name.trim() });
@@ -162,7 +207,7 @@ function LoginPageContent() {
           setError("Please verify your email address before signing in. Check your inbox.");
           return;
         }
-        const redirect = searchParams.get("redirect") ?? "/dashboard";
+        const redirect = getSafeRedirect(searchParams.get("redirect"));
         router.push(redirect);
         return;
       }
@@ -563,9 +608,9 @@ function LoginPageContent() {
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setFocusedField("password")}
                   onBlur={() => setFocusedField(null)}
-                  placeholder={mode === "signup" ? "Min. 8 characters" : "••••••••"}
+                  placeholder={mode === "signup" ? "Letters, numbers & symbols" : "••••••••"}
                   required
-                  minLength={mode === "signup" ? 8 : undefined}
+                  minLength={8}
                   className="w-full rounded-xl border border-brand/[0.08] bg-white py-3 pl-11 pr-12 text-[15px] text-ink placeholder:text-brand/40 shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:border-accent/30 focus:shadow-[0_0_0_3px_rgba(91,160,143,0.08),0_0_20px_rgba(91,160,143,0.06)] transition-all duration-300"
                 />
                 <button
@@ -589,10 +634,43 @@ function LoginPageContent() {
                   )}
                 </button>
               </div>
-              {/* Password helper (signup) */}
-              {mode === "signup" && (
+              {/* Password strength indicator (signup only) */}
+              {mode === "signup" && password.length > 0 && (
+                <div className="mt-2 space-y-1.5">
+                  {/* Strength bar */}
+                  <div className="flex gap-1">
+                    {PASSWORD_RULES.map((rule) => (
+                      <div
+                        key={rule.key}
+                        className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                          rule.test(password)
+                            ? "bg-emerald"
+                            : "bg-brand/[0.08]"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  {/* Rule checklist */}
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                    {PASSWORD_RULES.map((rule) => {
+                      const pass = rule.test(password);
+                      return (
+                        <span
+                          key={rule.key}
+                          className={`text-[11px] transition-colors duration-200 ${
+                            pass ? "text-emerald" : "text-ink-faint"
+                          }`}
+                        >
+                          {pass ? "✓" : "○"} {rule.label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {mode === "signup" && password.length === 0 && (
                 <p className="mt-1.5 text-[12px] text-ink-faint">
-                  Use 8+ characters with a mix of letters and numbers
+                  Use 8+ characters with uppercase, lowercase, numbers &amp; symbols
                 </p>
               )}
             </div>

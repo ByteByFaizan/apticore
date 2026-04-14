@@ -15,8 +15,20 @@ export interface AuthUser {
 /**
  * Verify Firebase ID token from Authorization header.
  * Returns decoded user or throws with status code.
+ *
+ * Also checks X-Requested-With header on mutation requests
+ * as CSRF defense-in-depth (custom headers require CORS preflight).
  */
 export async function verifyAuth(request: NextRequest): Promise<AuthUser> {
+  // CSRF defense-in-depth: mutation requests must include custom header
+  // Simple cross-origin form POSTs cannot set custom headers
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    const xrw = request.headers.get("X-Requested-With");
+    if (xrw !== "XMLHttpRequest") {
+      throw new AuthError(403, "Missing required request header");
+    }
+  }
+
   const authHeader = request.headers.get("Authorization");
 
   if (!authHeader?.startsWith("Bearer ")) {
