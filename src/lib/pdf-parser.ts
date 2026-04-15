@@ -132,7 +132,7 @@ export async function extractTextFromDOCX(buffer: Buffer): Promise<{
  * Detect file type from buffer magic bytes.
  * Validates ZIP contents to distinguish DOCX from other ZIP formats (XLSX, PPTX, etc.)
  */
-export function detectFileType(buffer: Buffer): "pdf" | "docx" | "txt" | "unknown" {
+function detectFileType(buffer: Buffer): "pdf" | "docx" | "txt" | "unknown" {
   if (buffer.length < 4) return "unknown";
 
   // PDF magic bytes: %PDF

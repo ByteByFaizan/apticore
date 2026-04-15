@@ -140,8 +140,6 @@ export interface BiasImprovement {
 }
 
 // ── AI Provider ──
-export type AIProvider = "gemini";
-
 export interface AIMessage {
   role: "system" | "user" | "assistant";
   content: string;
@@ -162,39 +160,4 @@ export interface AICompletionResult {
     completionTokens: number;
     totalTokens: number;
   };
-}
-
-// ── API Request/Response Types ──
-export interface CreateBatchRequest {
-  jdText: string;
-}
-
-export interface CreateBatchResponse {
-  batchId: string;
-  uploadUrls: string[]; // signed URLs for resume upload
-}
-
-export interface ProcessBatchRequest {
-  batchId: string;
-}
-
-export interface BatchListResponse {
-  batches: JobBatch[];
-  total: number;
-}
-
-export interface CandidateListResponse {
-  candidates: CandidateResult[];
-  total: number;
-}
-
-// ── User Profile ──
-export interface UserProfile {
-  uid: string;
-  email: string;
-  displayName?: string;
-  company?: string;
-  role?: string;
-  createdAt: string;
-  batchCount: number;
 }

@@ -135,34 +135,6 @@ export async function getUserBatches(userId: string): Promise<JobBatch[]> {
 
 // ── Candidate Operations ──
 
-export async function saveCandidateResult(
-  batchId: string,
-  result: {
-    rawData: CandidateRawData;
-    anonymizedData: AnonymizedCandidate;
-    matchScore: number;
-    skillBreakdown: SkillMatch[];
-    explanation: string;
-    rank: number;
-    parseStatus: "SUCCESS" | "PARSE_FAILED" | "NEEDS_OCR";
-    parseError?: string;
-  }
-): Promise<string> {
-  const ref = adminDb
-    .collection("jobBatches")
-    .doc(batchId)
-    .collection("candidates")
-    .doc();
-
-  await ref.set(stripUndefined({
-    batchId,
-    ...result,
-    createdAt: new Date().toISOString(),
-  }));
-
-  return ref.id;
-}
-
 /**
  * Save multiple candidate results.
  * Handles Firestore's 500-operation batch limit by chunking.

@@ -16,7 +16,7 @@ import type {
  * Match a single candidate against JD requirements (keyword-based).
  * Returns match score (0-100) and per-skill breakdown.
  */
-export function matchCandidateToJD(
+function matchCandidateToJD(
   candidate: AnonymizedCandidate,
   jd: JDRequirements
 ): { score: number; skillBreakdown: SkillMatch[] } {
@@ -272,7 +272,7 @@ export async function semanticMatch(
 /**
  * Cosine similarity between two vectors (pure JS math).
  */
-export function cosineSimilarity(a: number[], b: number[]): number {
+function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length || a.length === 0) return 0;
 
   let dotProduct = 0;

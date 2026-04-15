@@ -71,13 +71,3 @@ export class AuthError extends Error {
     this.name = "AuthError";
   }
 }
-
-/**
- * Helper: create error response from AuthError
- */
-export function authErrorResponse(error: unknown) {
-  if (error instanceof AuthError) {
-    return Response.json({ error: error.message }, { status: error.statusCode });
-  }
-  return Response.json({ error: "Internal server error" }, { status: 500 });
-}
