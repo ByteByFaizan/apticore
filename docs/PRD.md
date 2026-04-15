@@ -315,7 +315,7 @@ jobBatches/{batchId}
 
 | Model | Usage | Temperature | Max Tokens |
 |-------|-------|-------------|------------|
-| `gemini-2.5-pro` | Resume parsing, JD extraction | 0.1 | 4096 / 2048 |
+| `gemini-2.5-pro` | Resume parsing, JD extraction | 0 | 4096 / 2048 |
 | `gemini-2.5-flash` | Explanation generation | 0.2 | 300 |
 | `gemini-embedding-001` | Semantic skill matching (vector embeddings) | — | — |
 

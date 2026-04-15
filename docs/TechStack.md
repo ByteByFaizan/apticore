@@ -204,12 +204,12 @@ The AI pipeline is the operational heart of AptiCore. It runs entirely in JavaSc
 
 | Model | Task | Temperature | Max Tokens | JSON Mode |
 |-------|------|-------------|------------|-----------|
-| `gemini-2.5-pro` | Resume parsing (structured extraction) | 0.1 | 4,096 | ✅ |
-| `gemini-2.5-pro` | JD requirement extraction | 0.1 | 2,048 | ✅ |
+| `gemini-2.5-pro` | Resume parsing (structured extraction) | 0 | 4,096 | ✅ |
+| `gemini-2.5-pro` | JD requirement extraction | 0 | 2,048 | ✅ |
 | `gemini-2.5-flash` | Explanation generation | 0.2 | 300 | ❌ |
 | `gemini-embedding-001` | Semantic skill matching (vector embeddings) | — | — | — |
 
-- **Why Pro for parsing:** Resume and JD parsing require high accuracy for structured JSON extraction. Low temperature (0.1) ensures deterministic, consistent output.
+- **Why Pro for parsing:** Resume and JD parsing require high accuracy for structured JSON extraction. Zero temperature (0) ensures deterministic, consistent output.
 - **Why Flash for explanations:** Explanations are simpler text generation that benefit from speed over depth. Slightly higher temperature (0.2) allows natural language variation.
 - **Why separate embedding model:** `gemini-embedding-001` is Google's current recommended embedding model — dedicated to producing high-quality vector representations.
 

@@ -367,7 +367,7 @@ Step 9   COMPLETE        → Results ready with rankings & explanations
 
 | Model | Purpose | Configuration |
 |-------|---------|---------------|
-| **Gemini 2.5 Pro** | Resume parsing, JD extraction | `temperature: 0.1`, structured JSON output |
+| **Gemini 2.5 Pro** | Resume parsing, JD extraction | `temperature: 0`, structured JSON output |
 | **Gemini 2.5 Flash** | Candidate explanations | `temperature: 0.3`, natural language output |
 | **gemini-embedding-001** | Semantic skill similarity | 768-dimensional vectors |
 

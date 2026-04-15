@@ -118,7 +118,7 @@ export async function parseResume(rawText: string): Promise<CandidateRawData> {
         content: `Extract structured data from this resume. Return only JSON.\n\n---\n${safeText}\n---`,
       },
     ],
-    temperature: 0.1,
+    temperature: 0,
     maxTokens: 4096,
     jsonMode: true,
   });
@@ -224,7 +224,7 @@ export async function extractJDRequirements(jdText: string): Promise<JDRequireme
         content: `Extract structured requirements from this job description. Return only JSON.\n\n---\n${safeText}\n---`,
       },
     ],
-    temperature: 0.1,
+    temperature: 0,
     maxTokens: 2048,
     jsonMode: true,
   });
