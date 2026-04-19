@@ -1,9 +1,10 @@
 /* ═══════════════════════════════════════════════
    Gemini Client — Resume Parsing, PII Detection,
    JD Extraction & Explainability
-   Production-Grade Prompts
+   Production-Grade: Deterministic, Validated, Robust
    ═══════════════════════════════════════════════ */
 
+import { z } from "zod";
 import { getAIProvider } from "./ai/provider";
 import { logger } from "./logger";
 import type {
@@ -27,6 +28,81 @@ function truncateInput(text: string, maxChars: number, label: string): string {
     truncated: maxChars,
   });
   return text.slice(0, maxChars) + "\n\n[... truncated due to length]";
+}
+
+// ═══════════════════════════════════════════════
+// Validation Schemas — Zod v4
+// Validates AI JSON output structure and completeness
+// ═══════════════════════════════════════════════
+
+const ExperienceEntrySchema = z.object({
+  title: z.string().default(""),
+  company: z.string().default(""),
+  duration: z.string().default(""),
+  description: z.string().default(""),
+});
+
+const ProjectEntrySchema = z.object({
+  name: z.string().default(""),
+  description: z.string().default(""),
+  technologies: z.array(z.string()).default([]),
+});
+
+const EducationEntrySchema = z.object({
+  degree: z.string().default(""),
+  institution: z.string().default(""),
+  year: z.string().nullable().optional(),
+  gpa: z.string().nullable().optional(),
+});
+
+const ResumeParseSchema = z.object({
+  name: z.string().default("Unknown"),
+  email: z.string().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  gender: z.enum(["male", "female", "non-binary", "unknown"]).default("unknown"),
+  college: z.string().default("Unknown"),
+  collegeTier: z.enum(["tier1", "tier2", "tier3", "unknown"]).default("unknown"),
+  location: z.string().default("Unknown"),
+  locationType: z.enum(["urban", "rural", "suburban", "unknown"]).default("unknown"),
+  skills: z.array(z.string()).default([]),
+  experienceYears: z.number().default(0),
+  experience: z.array(ExperienceEntrySchema).default([]),
+  projects: z.array(ProjectEntrySchema).default([]),
+  education: z.array(EducationEntrySchema).default([]),
+  summary: z.string().optional(),
+});
+
+const JDParseSchema = z.object({
+  title: z.string().default("Unknown Position"),
+  requiredSkills: z.array(z.string()).default([]),
+  preferredSkills: z.array(z.string()).default([]),
+  minimumExperience: z.number().default(0),
+  educationLevel: z.string().default("Any"),
+  description: z.string().default(""),
+});
+
+/**
+ * Safely parse JSON from AI response — handles markdown fencing, BOM, etc.
+ */
+function safeParseJSON(raw: string): unknown {
+  let cleaned = raw.trim();
+
+  // Strip markdown code fences if present
+  if (cleaned.startsWith("```json")) {
+    cleaned = cleaned.slice(7);
+  } else if (cleaned.startsWith("```")) {
+    cleaned = cleaned.slice(3);
+  }
+  if (cleaned.endsWith("```")) {
+    cleaned = cleaned.slice(0, -3);
+  }
+
+  // Strip BOM
+  if (cleaned.charCodeAt(0) === 0xfeff) {
+    cleaned = cleaned.slice(1);
+  }
+
+  return JSON.parse(cleaned.trim());
 }
 
 // ═══════════════════════════════════════════════
@@ -102,49 +178,95 @@ Extract ALL of the following categories:
 
 /**
  * Parse raw resume text into structured candidate data.
+ * Deterministic (temperature=0) with Zod validation and retry on failure.
  */
 export async function parseResume(rawText: string): Promise<CandidateRawData> {
   const ai = getAIProvider();
   const safeText = truncateInput(rawText, MAX_RESUME_CHARS, "Resume text");
 
-  const result = await ai.complete({
-    messages: [
-      {
-        role: "system",
-        content: RESUME_PARSE_SYSTEM_PROMPT,
-      },
-      {
-        role: "user",
-        content: `Extract structured data from this resume. Return only JSON.\n\n---\n${safeText}\n---`,
-      },
-    ],
-    temperature: 0,
-    maxTokens: 4096,
-    jsonMode: true,
-  });
+  const messages = [
+    {
+      role: "system" as const,
+      content: RESUME_PARSE_SYSTEM_PROMPT,
+    },
+    {
+      role: "user" as const,
+      content: `Extract structured data from this resume. Return only valid JSON, no markdown fencing.\n\n---\n${safeText}\n---`,
+    },
+  ];
 
-  try {
-    const parsed = JSON.parse(result.content);
-    return {
-      name: parsed.name || "Unknown",
-      email: parsed.email || undefined,
-      phone: parsed.phone || undefined,
-      gender: parsed.gender || "unknown",
-      college: parsed.college || "Unknown",
-      collegeTier: parsed.collegeTier || "unknown",
-      location: parsed.location || "Unknown",
-      locationType: parsed.locationType || "unknown",
-      skills: Array.isArray(parsed.skills) ? parsed.skills : [],
-      experienceYears: Number(parsed.experienceYears) || 0,
-      experience: Array.isArray(parsed.experience) ? parsed.experience : [],
-      projects: Array.isArray(parsed.projects) ? parsed.projects : [],
-      education: Array.isArray(parsed.education) ? parsed.education : [],
-      summary: parsed.summary || undefined,
-    };
-  } catch {
-    logger.error("[AI] Resume parse JSON failed", { raw: result.content.slice(0, 200) });
-    throw new Error("Failed to parse AI response as JSON");
+  // Attempt 1: Standard parse
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const result = await ai.complete({
+        messages: attempt === 0 ? messages : [
+          ...messages,
+          {
+            role: "assistant" as const,
+            content: lastError?.message || "Invalid JSON",
+          },
+          {
+            role: "user" as const,
+            content: "Your previous response was not valid JSON. Return ONLY the JSON object, no markdown, no explanation. Fix the JSON syntax and try again.",
+          },
+        ],
+        temperature: 0,
+        maxTokens: 4096,
+        jsonMode: true,
+      });
+
+      const rawParsed = safeParseJSON(result.content);
+      const validated = ResumeParseSchema.parse(rawParsed);
+
+      return {
+        name: validated.name || "Unknown",
+        email: validated.email || undefined,
+        phone: validated.phone || undefined,
+        gender: validated.gender || "unknown",
+        college: validated.college || "Unknown",
+        collegeTier: validated.collegeTier || "unknown",
+        location: validated.location || "Unknown",
+        locationType: validated.locationType || "unknown",
+        skills: validated.skills,
+        experienceYears: validated.experienceYears,
+        experience: validated.experience.map((e) => ({
+          title: e.title,
+          company: e.company,
+          duration: e.duration,
+          description: e.description,
+        })),
+        projects: validated.projects.map((p) => ({
+          name: p.name,
+          description: p.description,
+          technologies: p.technologies,
+        })),
+        education: validated.education.map((e) => ({
+          degree: e.degree,
+          institution: e.institution,
+          year: e.year || undefined,
+          gpa: e.gpa || undefined,
+        })),
+        summary: validated.summary,
+      };
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      logger.warn(`[AI] Resume parse attempt ${attempt + 1} failed`, {
+        error: lastError.message,
+      });
+
+      // Only retry on JSON/validation errors, not network errors
+      if (attempt === 0 && (lastError.message.includes("JSON") || lastError.message.includes("parse") || lastError.message.includes("Expected"))) {
+        continue; // retry with correction prompt
+      }
+      break;
+    }
   }
+
+  logger.error("[AI] Resume parse failed after retries", {
+    error: lastError?.message,
+  });
+  throw new Error(`Failed to parse resume: ${lastError?.message || "Unknown error"}`);
 }
 
 // ═══════════════════════════════════════════════
@@ -208,45 +330,75 @@ When ambiguous:
 
 /**
  * Extract structured requirements from Job Description text.
+ * Deterministic (temperature=0) with Zod validation and retry.
  */
 export async function extractJDRequirements(jdText: string): Promise<JDRequirements> {
   const ai = getAIProvider();
   const safeText = truncateInput(jdText, MAX_JD_CHARS, "JD text");
 
-  const result = await ai.complete({
-    messages: [
-      {
-        role: "system",
-        content: JD_EXTRACT_SYSTEM_PROMPT,
-      },
-      {
-        role: "user",
-        content: `Extract structured requirements from this job description. Return only JSON.\n\n---\n${safeText}\n---`,
-      },
-    ],
-    temperature: 0,
-    maxTokens: 2048,
-    jsonMode: true,
-  });
+  const messages = [
+    {
+      role: "system" as const,
+      content: JD_EXTRACT_SYSTEM_PROMPT,
+    },
+    {
+      role: "user" as const,
+      content: `Extract structured requirements from this job description. Return only valid JSON, no markdown fencing.\n\n---\n${safeText}\n---`,
+    },
+  ];
 
-  try {
-    const parsed = JSON.parse(result.content);
-    return {
-      title: parsed.title || "Unknown Position",
-      requiredSkills: Array.isArray(parsed.requiredSkills) ? parsed.requiredSkills : [],
-      preferredSkills: Array.isArray(parsed.preferredSkills) ? parsed.preferredSkills : [],
-      minimumExperience: Number(parsed.minimumExperience) || 0,
-      educationLevel: parsed.educationLevel || "Any",
-      description: parsed.description || "",
-    };
-  } catch {
-    logger.error("[AI] JD parse JSON failed", { raw: result.content.slice(0, 200) });
-    throw new Error("Failed to parse JD requirements from AI response");
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const result = await ai.complete({
+        messages: attempt === 0 ? messages : [
+          ...messages,
+          {
+            role: "assistant" as const,
+            content: lastError?.message || "Invalid JSON",
+          },
+          {
+            role: "user" as const,
+            content: "Your previous response was not valid JSON. Return ONLY the JSON object, no markdown, no explanation. Fix the JSON syntax and try again.",
+          },
+        ],
+        temperature: 0,
+        maxTokens: 2048,
+        jsonMode: true,
+      });
+
+      const rawParsed = safeParseJSON(result.content);
+      const validated = JDParseSchema.parse(rawParsed);
+
+      return {
+        title: validated.title,
+        requiredSkills: validated.requiredSkills,
+        preferredSkills: validated.preferredSkills,
+        minimumExperience: validated.minimumExperience,
+        educationLevel: validated.educationLevel,
+        description: validated.description,
+      };
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      logger.warn(`[AI] JD parse attempt ${attempt + 1} failed`, {
+        error: lastError.message,
+      });
+
+      if (attempt === 0 && (lastError.message.includes("JSON") || lastError.message.includes("parse") || lastError.message.includes("Expected"))) {
+        continue;
+      }
+      break;
+    }
   }
+
+  logger.error("[AI] JD parse failed after retries", {
+    error: lastError?.message,
+  });
+  throw new Error(`Failed to parse JD requirements: ${lastError?.message || "Unknown error"}`);
 }
 
 // ═══════════════════════════════════════════════
-// PROMPT 3: Explainability — B+ → A
+// PROMPT 3: Explainability — Temperature 0 for Determinism
 // ═══════════════════════════════════════════════
 
 const EXPLANATION_SYSTEM_PROMPT = `You are the Explainability Engine of AptiCore, a fair hiring platform. Generate a concise, factual explanation for why a candidate received their match score.
@@ -274,11 +426,15 @@ Good: "Scored 82% for Senior Backend Engineer — strong alignment in core requi
 Good: "Scored 45% for Data Scientist — partial match with foundational skills present. Candidate has Python and SQL, which are required. However, missing critical requirements: TensorFlow, statistical modeling, and cloud ML deployment experience."
 
 Bad (too vague): "The candidate is a strong match and would be a great fit for the team."
-Bad (mentions identity): "Despite being from a tier-2 college, the candidate shows promise."`;
+Bad (mentions identity): "Despite being from a tier-2 college, the candidate shows promise."
+
+## FORMAT
+Return ONLY the explanation text. No JSON, no labels, no prefixes. Just the 2-3 sentences.`;
 
 /**
  * Generate human-readable explanation for a candidate's score.
  * PRD Step 7: Explainability Engine.
+ * DETERMINISTIC: temperature=0, same input → same output.
  */
 export async function generateExplanation(
   candidateSkills: string[],
@@ -293,15 +449,16 @@ export async function generateExplanation(
   const matchedPreferred = skillBreakdown.filter((s) => s.matched && !s.required).map((s) => s.skill);
   const totalRequired = skillBreakdown.filter((s) => s.required).length;
 
-  const result = await ai.complete({
-    messages: [
-      {
-        role: "system",
-        content: EXPLANATION_SYSTEM_PROMPT,
-      },
-      {
-        role: "user",
-        content: `Generate a 2-3 sentence explanation for this candidate assessment:
+  try {
+    const result = await ai.complete({
+      messages: [
+        {
+          role: "system",
+          content: EXPLANATION_SYSTEM_PROMPT,
+        },
+        {
+          role: "user",
+          content: `Generate a 2-3 sentence explanation for this candidate assessment:
 
 Match Score: ${matchScore}%
 Position: ${jdRequirements.title}
@@ -310,14 +467,62 @@ Required Skills Missing: ${missingRequired.join(", ") || "None"}
 Preferred Skills Matched: ${matchedPreferred.join(", ") || "None"}
 Candidate's Full Skill Set: ${candidateSkills.slice(0, 25).join(", ")}
 Minimum Experience Required: ${jdRequirements.minimumExperience} years`,
-      },
-    ],
-    temperature: 0.2,
-    maxTokens: 300,
-    model: "gemini-2.5-flash",
-  });
+        },
+      ],
+      temperature: 0,    // DETERMINISTIC — was 0.2, caused inconsistent outputs
+      maxTokens: 800,     // Was 300 — caused truncated explanations
+      model: "gemini-2.5-flash",
+    });
 
-  return result.content.trim();
+    const explanation = result.content.trim();
+
+    // Validate explanation is not empty or too short
+    if (!explanation || explanation.length < 20) {
+      return buildFallbackExplanation(matchScore, jdRequirements.title, matchedRequired, missingRequired);
+    }
+
+    return explanation;
+  } catch (err) {
+    logger.warn("[AI] Explanation generation failed, using fallback", {
+      error: err instanceof Error ? err.message : "Unknown",
+    });
+    return buildFallbackExplanation(matchScore, jdRequirements.title, matchedRequired, missingRequired);
+  }
+}
+
+/**
+ * Build a deterministic fallback explanation when AI fails.
+ * Ensures no blank or truncated explanations ever reach the user.
+ */
+function buildFallbackExplanation(
+  score: number,
+  position: string,
+  matchedRequired: string[],
+  missingRequired: string[]
+): string {
+  const tier = score >= 90
+    ? "exceptional"
+    : score >= 70
+      ? "strong"
+      : score >= 50
+        ? "moderate"
+        : score >= 30
+          ? "partial"
+          : "weak";
+
+  let explanation = `Scored ${score}% for ${position} — ${tier} match.`;
+
+  if (matchedRequired.length > 0) {
+    explanation += ` Matched required skills: ${matchedRequired.slice(0, 4).join(", ")}.`;
+  }
+
+  if (missingRequired.length > 0) {
+    explanation += ` Missing required skills: ${missingRequired.slice(0, 4).join(", ")}.`;
+  } else if (matchedRequired.length === 0) {
+    explanation += " No required skill matches were identified.";
+  }
+
+  return explanation;
 }
 
 // ═══════════════════════════════════════════════

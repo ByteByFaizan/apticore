@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════
    POST /api/batch/process
    Orchestrate the full 9-step pipeline
+   Fixed: deterministic mapping, correct candidate tracing
    ═══════════════════════════════════════════════ */
 
 import { NextRequest, after } from "next/server";
@@ -24,7 +25,6 @@ import { checkRateLimit, rateLimitHeaders, rateLimitResponse } from "@/lib/rate-
 import { logger, createTimer } from "@/lib/logger";
 import type {
   CandidateRawData,
-  AnonymizedCandidate,
   CandidateResult,
   SkillMatch,
 } from "@/lib/types";
@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * Full 9-step pipeline executed in background.
+ * Deterministic: same input → same output (seeded shuffle, temperature=0).
  */
 async function processInBackground(batchId: string, jdText: string) {
   const timer = createTimer(`pipeline:${batchId}`);
@@ -126,6 +127,7 @@ async function processInBackground(batchId: string, jdText: string) {
     .collection("jobBatches")
     .doc(batchId)
     .collection("resumeFiles")
+    .orderBy("uploadedAt", "asc") // Deterministic order — process in upload order
     .get();
 
   if (resumeDocs.empty) {
@@ -135,21 +137,30 @@ async function processInBackground(batchId: string, jdText: string) {
     return;
   }
 
-  // Fix 7: Resume deduplication cache — avoids re-parsing identical resumes
+  // Resume deduplication cache — avoids re-parsing identical resumes
   const parseCache = new Map<string, CandidateRawData>();
 
+  // Track per-candidate parse status for correct reporting
+  interface ParseResult {
+    candidate: CandidateRawData;
+    parseStatus: "SUCCESS" | "PARSE_FAILED" | "NEEDS_OCR";
+    parseError?: string;
+    fileName: string;
+  }
+
   // [async-parallel] Parse all resumes in parallel instead of sequential
-  const parseResults = await Promise.allSettled(
-    resumeDocs.docs.map(async (doc) => {
+  const parseSettled = await Promise.allSettled(
+    resumeDocs.docs.map(async (doc): Promise<ParseResult> => {
       const data = doc.data();
+      const fileName = data.fileName || "unknown";
 
       // Guard: check contentBase64 exists
       if (!data.contentBase64) {
         return {
-          type: "error" as const,
-          fileName: data.fileName || "unknown",
-          error: "File content is missing",
-          candidate: createPlaceholderCandidate(data.fileName),
+          candidate: createPlaceholderCandidate(fileName),
+          parseStatus: "PARSE_FAILED",
+          parseError: "File content is missing",
+          fileName,
         };
       }
 
@@ -158,71 +169,99 @@ async function processInBackground(batchId: string, jdText: string) {
       // Guard: empty buffer
       if (buffer.length === 0) {
         return {
-          type: "error" as const,
-          fileName: data.fileName || "unknown",
-          error: "File is empty",
-          candidate: createPlaceholderCandidate(data.fileName),
+          candidate: createPlaceholderCandidate(fileName),
+          parseStatus: "PARSE_FAILED",
+          parseError: "File is empty",
+          fileName,
         };
       }
 
-      const extracted = await extractText(buffer, data.fileName);
+      const extracted = await extractText(buffer, fileName);
 
-      if (extracted.status === "PARSE_FAILED" || extracted.status === "NEEDS_OCR") {
+      if (extracted.status === "PARSE_FAILED") {
         return {
-          type: "error" as const,
-          fileName: data.fileName || "unknown",
-          error: extracted.error || "Failed to extract text",
-          candidate: createPlaceholderCandidate(data.fileName),
+          candidate: createPlaceholderCandidate(fileName),
+          parseStatus: "PARSE_FAILED",
+          parseError: extracted.error || "Failed to extract text from file",
+          fileName,
         };
       }
 
-      // Fix 7: Check deduplication cache before calling Gemini
+      if (extracted.status === "NEEDS_OCR") {
+        return {
+          candidate: createPlaceholderCandidate(fileName),
+          parseStatus: "NEEDS_OCR",
+          parseError: extracted.error || "Scanned PDF detected — OCR required",
+          fileName,
+        };
+      }
+
+      // Log text quality for debugging
+      if (extracted.quality < 50) {
+        logger.warn("[Pipeline] Low quality text extraction", {
+          fileName,
+          quality: extracted.quality,
+          textLength: extracted.text.length,
+        });
+      }
+
+      // Check deduplication cache before calling Gemini
       const contentHash = hashResumeContent(extracted.text);
       const cached = parseCache.get(contentHash);
       if (cached) {
-        logger.debug("Resume dedup hit", { fileName: data.fileName, hash: contentHash });
-        return { type: "success" as const, candidate: { ...cached } };
+        logger.debug("Resume dedup hit", { fileName, hash: contentHash });
+        return {
+          candidate: { ...cached },
+          parseStatus: "SUCCESS",
+          fileName,
+        };
       }
 
       try {
         const parsed = await parseResume(extracted.text);
         // Store in cache for deduplication
         parseCache.set(contentHash, parsed);
-        return { type: "success" as const, candidate: parsed };
+        return {
+          candidate: parsed,
+          parseStatus: "SUCCESS",
+          fileName,
+        };
       } catch (err) {
         return {
-          type: "error" as const,
-          fileName: data.fileName || "unknown",
-          error: `AI parsing failed: ${err instanceof Error ? err.message : "Unknown"}`,
-          candidate: createPlaceholderCandidate(data.fileName),
+          candidate: createPlaceholderCandidate(fileName),
+          parseStatus: "PARSE_FAILED",
+          parseError: `AI parsing failed: ${err instanceof Error ? err.message : "Unknown"}`,
+          fileName,
         };
       }
     })
   );
 
-  // [js-combine-iterations] Collect candidates + errors in single pass
-  const candidates: CandidateRawData[] = [];
-  const parseErrors: { fileName: string; error: string }[] = [];
+  // Collect results from settled promises
+  const parseResults: ParseResult[] = [];
 
-  for (const result of parseResults) {
-    if (result.status === "fulfilled") {
-      candidates.push(result.value.candidate);
-      if (result.value.type === "error") {
-        parseErrors.push({
-          fileName: result.value.fileName,
-          error: result.value.error,
-        });
-      }
+  for (const settled of parseSettled) {
+    if (settled.status === "fulfilled") {
+      parseResults.push(settled.value);
     } else {
       // Promise itself rejected (unexpected)
-      parseErrors.push({
+      parseResults.push({
+        candidate: createPlaceholderCandidate("unknown"),
+        parseStatus: "PARSE_FAILED",
+        parseError: settled.reason instanceof Error ? settled.reason.message : "Unknown error",
         fileName: "unknown",
-        error: result.reason instanceof Error ? result.reason.message : "Unknown error",
       });
     }
   }
 
-  timer.step(`Resumes parsed (${candidates.length} ok, ${parseErrors.length} errors)`);
+  const successCount = parseResults.filter((r) => r.parseStatus === "SUCCESS").length;
+  const errorCount = parseResults.filter((r) => r.parseStatus !== "SUCCESS").length;
+
+  timer.step(`Resumes parsed (${successCount} ok, ${errorCount} errors)`);
+
+  // All candidates go into pipeline (including failed ones with placeholder data)
+  // This ensures batch results always contain entries for all uploaded files
+  const candidates: CandidateRawData[] = parseResults.map((r) => r.candidate);
 
   if (candidates.length === 0) {
     await updateBatchStatus(batchId, "FAILED", {
@@ -232,8 +271,12 @@ async function processInBackground(batchId: string, jdText: string) {
   }
 
   // Log parse errors for debugging
+  const parseErrors = parseResults.filter((r) => r.parseError);
   if (parseErrors.length > 0) {
-    logger.warn("Resume parse errors", { batchId, errors: parseErrors });
+    logger.warn("Resume parse errors", {
+      batchId,
+      errors: parseErrors.map((e) => ({ fileName: e.fileName, error: e.parseError })),
+    });
   }
 
   // ═══ Step 3: Bias Detection BEFORE ═══
@@ -241,16 +284,15 @@ async function processInBackground(batchId: string, jdText: string) {
   const biasBefore = detectBiasBefore(candidates);
   timer.step("Bias before analyzed");
 
-  // ═══ Step 4: Anonymize (with shuffle) ═══
+  // ═══ Step 4: Anonymize (deterministic seeded shuffle) ═══
   await updateBatchStatus(batchId, "ANONYMIZING");
-  // Use anonymizeBatch which shuffles order to prevent position-based inference
-  const anonymized: AnonymizedCandidate[] = anonymizeBatch(candidates);
+  // FIXED: Use batchId as seed for deterministic shuffle
+  // Same batchId → same shuffle order → same output every run
+  const { anonymized, indexMap } = anonymizeBatch(candidates, batchId);
   timer.step("Anonymized");
 
-  // Build a map to trace anonymized back to original candidates
-  // Since anonymizeBatch shuffles, we need to track the mapping
-  // anonymizeBatch shuffles internally, so the order of anonymized != candidates
-  // We need the original candidates array for bias-after analysis
+  // indexMap[shuffledPos] = originalPos in candidates array
+  // This is the correct mapping — no broken index math
 
   // ═══ Step 5 & 6: Match + Rank (Hybrid: Keyword 70% + Semantic 30%) ═══
   await updateBatchStatus(batchId, "MATCHING");
@@ -276,6 +318,7 @@ async function processInBackground(batchId: string, jdText: string) {
       candidateId: anonymized[i].candidateId,
       score: 0,
       skillBreakdown: [] as SkillMatch[],
+      semanticBoost: 0,
     };
   });
 
@@ -286,22 +329,19 @@ async function processInBackground(batchId: string, jdText: string) {
   // ═══ Step 7: Generate explanations ═══
   await updateBatchStatus(batchId, "EXPLAINING");
 
-  // [js-set-map-lookups] Build O(1) lookup map instead of findIndex per candidate
+  // Build O(1) lookup: candidateId → index in anonymized array
   const anonIndexMap = new Map<string, number>();
   for (let i = 0; i < anonymized.length; i++) {
     anonIndexMap.set(anonymized[i].candidateId, i);
   }
 
-  // [js-set-map-lookups] Build error lookup Map for O(1) checks
-  const parseErrorMap = new Map(parseErrors.map((e) => [e.fileName, e.error]));
-
   // [async-parallel] Generate all explanations in parallel
   const explanationResults = await Promise.allSettled(
     ranked.map(async (rankedItem) => {
-      const idx = anonIndexMap.get(rankedItem.candidateId) ?? -1;
-      if (idx < 0) return `Scored ${rankedItem.score}% based on skill matching.`;
+      const anonIdx = anonIndexMap.get(rankedItem.candidateId) ?? -1;
+      if (anonIdx < 0) return `Scored ${rankedItem.score}% based on skill matching.`;
 
-      const anon = anonymized[idx];
+      const anon = anonymized[anonIdx];
       try {
         return await generateExplanation(
           anon.skills,
@@ -317,9 +357,10 @@ async function processInBackground(batchId: string, jdText: string) {
 
   timer.step("Explanations generated");
 
+  // ═══ Build final results with CORRECT candidate mapping ═══
   const results: Array<{
     rawData: CandidateRawData;
-    anonymizedData: AnonymizedCandidate;
+    anonymizedData: typeof anonymized[0];
     matchScore: number;
     semanticBoost?: number;
     skillBreakdown: SkillMatch[];
@@ -328,16 +369,22 @@ async function processInBackground(batchId: string, jdText: string) {
     parseStatus: "SUCCESS" | "PARSE_FAILED" | "NEEDS_OCR";
     parseError?: string;
   }> = ranked.map((rankedItem, i) => {
-    const idx = anonIndexMap.get(rankedItem.candidateId) ?? 0;
-    // Use modular index to safely access candidates (shuffled order doesn't map 1:1)
-    const originalIdx = Math.min(idx, candidates.length - 1);
+    // Get anonymized index from candidateId
+    const anonIdx = anonIndexMap.get(rankedItem.candidateId) ?? 0;
+
+    // FIXED: Use indexMap to get correct original candidate
+    // indexMap[anonIdx] gives the original position in candidates array
+    const originalIdx = indexMap[anonIdx];
     const original = candidates[originalIdx];
-    const anon = anonymized[idx];
+    const anon = anonymized[anonIdx];
+
+    // Get correct parse status for this specific candidate
+    const candidateParseResult = parseResults[originalIdx];
+
     const explResult = explanationResults[i];
     const explanation = explResult.status === "fulfilled"
       ? explResult.value
       : `Scored ${rankedItem.score}% based on skill matching.`;
-    const parseError = parseErrorMap.get(original?.name || "");
 
     return {
       rawData: original,
@@ -347,8 +394,8 @@ async function processInBackground(batchId: string, jdText: string) {
       skillBreakdown: rankedItem.skillBreakdown,
       explanation,
       rank: rankedItem.rank,
-      parseStatus: parseError ? "PARSE_FAILED" as const : "SUCCESS" as const,
-      ...(parseError ? { parseError } : {}),
+      parseStatus: candidateParseResult.parseStatus,
+      ...(candidateParseResult.parseError ? { parseError: candidateParseResult.parseError } : {}),
     };
   });
 
@@ -377,6 +424,8 @@ async function processInBackground(batchId: string, jdText: string) {
   logger.info("Pipeline complete", {
     batchId,
     candidates: candidates.length,
+    successfulParses: successCount,
+    failedParses: errorCount,
     totalMs,
     fairnessBefore: biasBefore.fairnessScore,
     fairnessAfter: biasAfter.fairnessScore,

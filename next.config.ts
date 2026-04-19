@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
   },
 
   // Ensure Node.js modules used server-side are properly handled
-  serverExternalPackages: ["pdf-parse"],
+  serverExternalPackages: ["pdfjs-dist"],
 
   // Security headers — applied to ALL routes
   headers: async () => [

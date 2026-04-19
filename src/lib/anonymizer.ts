@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════
    Anonymizer — PII Removal & Candidate Masking
    PRD Step 4: Anonymization Layer
+   Deterministic shuffle for consistent output
    ═══════════════════════════════════════════════ */
 
 import type { CandidateRawData, AnonymizedCandidate } from "./types";
@@ -32,12 +33,64 @@ export function anonymizeCandidate(
 }
 
 /**
- * Anonymize entire batch of candidates.
+ * Anonymize entire batch of candidates with DETERMINISTIC shuffle.
+ * Returns both anonymized candidates and the index mapping.
+ *
+ * @param candidates - Original candidate array
+ * @param seed - Deterministic seed (e.g. batchId) for reproducible shuffle
+ * @returns anonymized candidates + mapping (shuffledIndex → originalIndex)
+ *
+ * Same seed + same candidates = same shuffle order = same output every time.
  */
-export function anonymizeBatch(candidates: CandidateRawData[]): AnonymizedCandidate[] {
-  // Shuffle order to prevent position-based inference
-  const shuffled = [...candidates].sort(() => Math.random() - 0.5);
-  return shuffled.map((c, i) => anonymizeCandidate(c, i));
+export function anonymizeBatch(
+  candidates: CandidateRawData[],
+  seed: string
+): {
+  anonymized: AnonymizedCandidate[];
+  indexMap: number[];
+} {
+  // Build index array [0, 1, 2, ...n]
+  const indices = candidates.map((_, i) => i);
+
+  // Deterministic shuffle using seeded PRNG
+  const rng = createSeededRNG(seed);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+
+  // Anonymize in shuffled order
+  const anonymized = indices.map((originalIdx, newIdx) =>
+    anonymizeCandidate(candidates[originalIdx], newIdx)
+  );
+
+  return {
+    anonymized,
+    indexMap: indices, // indexMap[shuffledPos] = originalPos
+  };
+}
+
+/**
+ * Create a seeded pseudo-random number generator (Mulberry32).
+ * Deterministic: same seed always produces same sequence.
+ * Used for consistent shuffle across runs.
+ */
+function createSeededRNG(seed: string): () => number {
+  // DJB2 hash of seed string → 32-bit integer
+  let hash = 5381;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) + hash + seed.charCodeAt(i)) | 0;
+  }
+
+  // Mulberry32 PRNG — fast, deterministic, well-distributed
+  let state = Math.abs(hash) >>> 0;
+  return function (): number {
+    state |= 0;
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 /**

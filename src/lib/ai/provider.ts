@@ -59,7 +59,7 @@ async function withRetry<T>(
       }
 
       // Exponential backoff with jitter
-      const delay = BASE_DELAY_MS * Math.pow(2, attempt) + Math.random() * 500;
+      const delay = BASE_DELAY_MS * Math.pow(2, attempt) + 250;
       logger.warn(`[AI] ${context} retrying (attempt ${attempt + 2}/${maxRetries + 1})`, {
         error: lastError.message,
         statusCode,
@@ -144,10 +144,17 @@ class GeminiProvider implements IAIProvider {
     return withRetry(async () => {
       const genAI = await this.getSDK();
       const selectedModel = options.model ?? "gemini-2.5-pro";
+      // Force maximum determinism when temperature=0:
+      // topK=1 picks the single most likely token (greedy decoding)
+      // topP=1 disables nucleus sampling
+      const temp = options.temperature ?? 0.3;
+      const isDeterministic = temp === 0;
+
       const model = genAI.getGenerativeModel({
         model: selectedModel,
         generationConfig: {
-          temperature: options.temperature ?? 0.3,
+          temperature: temp,
+          ...(isDeterministic ? { topK: 1, topP: 1 } : {}),
           maxOutputTokens: options.maxTokens ?? 4096,
           responseMimeType: options.jsonMode ? "application/json" : "text/plain",
         },
