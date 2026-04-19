@@ -418,7 +418,7 @@ AptiCore contributes to three United Nations Sustainable Development Goals:
 | [PRD.md](./docs/PRD.md) | Product Requirements Document — full system specification |
 | [TechStack.md](./docs/TechStack.md) | Technical stack — component inventory & API catalog |
 | [DesignDoc.md](./docs/DesignDoc.md) | Design system — tokens, components, interactions, animations |
-| [Privacy Policy](https://apticore.vercel.app/privacy) | Privacy policy — data handling, AI processing, and user rights |
+| [Privacy Policy](https://apticore-six.vercel.app/privacy) | Privacy policy — data handling, AI processing, and user rights |
 
 ---
 
