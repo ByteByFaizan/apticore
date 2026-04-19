@@ -42,16 +42,131 @@ type PDFJSModule = any;
 let pdfjsModule: PDFJSModule | null = null;
 
 /**
+ * Polyfill DOM APIs required by pdfjs-dist in Node.js / Vercel serverless.
+ * pdfjs-dist uses DOMMatrix for glyph transform matrices during text extraction.
+ * Without these polyfills, all PDFs fail with "DOMMatrix is not defined".
+ */
+function ensureDOMPolyfills(): void {
+  const g = globalThis as Record<string, unknown>;
+
+  // DOMMatrix — used by pdfjs-dist for text position/transform calculations
+  if (typeof g.DOMMatrix === "undefined") {
+    class DOMMatrixPolyfill {
+      a: number; b: number; c: number; d: number; e: number; f: number;
+      m11: number; m12: number; m13 = 0; m14 = 0;
+      m21 = 0; m22 = 1; m23 = 0; m24 = 0;
+      m31 = 0; m32 = 0; m33 = 1; m34 = 0;
+      m41: number; m42: number; m43 = 0; m44 = 1;
+      is2D = true; isIdentity: boolean;
+
+      constructor(init?: number[] | Float32Array | Float64Array | string) {
+        if (Array.isArray(init) || init instanceof Float32Array || init instanceof Float64Array) {
+          const v = Array.from(init);
+          if (v.length === 6) {
+            [this.a, this.b, this.c, this.d, this.e, this.f] = v;
+          } else if (v.length === 16) {
+            this.a = v[0]; this.b = v[1]; this.c = v[4]; this.d = v[5];
+            this.e = v[12]; this.f = v[13]; this.is2D = false;
+            this.m13 = v[2]; this.m14 = v[3];
+            this.m21 = v[4]; this.m22 = v[5]; this.m23 = v[6]; this.m24 = v[7];
+            this.m31 = v[8]; this.m32 = v[9]; this.m33 = v[10]; this.m34 = v[11];
+            this.m43 = v[14]; this.m44 = v[15];
+          } else {
+            this.a = 1; this.b = 0; this.c = 0; this.d = 1; this.e = 0; this.f = 0;
+          }
+        } else {
+          this.a = 1; this.b = 0; this.c = 0; this.d = 1; this.e = 0; this.f = 0;
+        }
+        // Sync aliases
+        this.m11 = this.a; this.m12 = this.b;
+        this.m21 = this.m21 ?? this.c; this.m22 = this.m22 ?? this.d;
+        this.m41 = this.e; this.m42 = this.f;
+        this.isIdentity = this.a === 1 && this.b === 0 && this.c === 0 &&
+          this.d === 1 && this.e === 0 && this.f === 0;
+      }
+
+      multiply(other: DOMMatrixPolyfill): DOMMatrixPolyfill {
+        return new DOMMatrixPolyfill([
+          this.a * other.a + this.c * other.b,
+          this.b * other.a + this.d * other.b,
+          this.a * other.c + this.c * other.d,
+          this.b * other.c + this.d * other.d,
+          this.a * other.e + this.c * other.f + this.e,
+          this.b * other.e + this.d * other.f + this.f,
+        ]);
+      }
+
+      translate(tx: number, ty: number): DOMMatrixPolyfill {
+        return this.multiply(new DOMMatrixPolyfill([1, 0, 0, 1, tx, ty]));
+      }
+
+      scale(sx: number, sy?: number): DOMMatrixPolyfill {
+        return this.multiply(new DOMMatrixPolyfill([sx, 0, 0, sy ?? sx, 0, 0]));
+      }
+
+      inverse(): DOMMatrixPolyfill {
+        const det = this.a * this.d - this.b * this.c;
+        if (det === 0) return new DOMMatrixPolyfill([0, 0, 0, 0, 0, 0]);
+        return new DOMMatrixPolyfill([
+          this.d / det, -this.b / det,
+          -this.c / det, this.a / det,
+          (this.c * this.f - this.d * this.e) / det,
+          (this.b * this.e - this.a * this.f) / det,
+        ]);
+      }
+
+      transformPoint(point?: { x?: number; y?: number }): { x: number; y: number } {
+        const x = point?.x ?? 0, y = point?.y ?? 0;
+        return { x: this.a * x + this.c * y + this.e, y: this.b * x + this.d * y + this.f };
+      }
+
+      static fromMatrix(other: DOMMatrixPolyfill): DOMMatrixPolyfill {
+        return new DOMMatrixPolyfill([other.a, other.b, other.c, other.d, other.e, other.f]);
+      }
+    }
+    g.DOMMatrix = DOMMatrixPolyfill;
+  }
+
+  // Path2D — pdfjs-dist tries to polyfill but warns if missing; stub it
+  if (typeof g.Path2D === "undefined") {
+    g.Path2D = class Path2DStub {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      constructor(_d?: string) { /* no-op for text extraction */ }
+      addPath() {}; closePath() {}; moveTo() {}; lineTo() {};
+      bezierCurveTo() {}; quadraticCurveTo() {}; arc() {}; rect() {};
+    };
+  }
+
+  // ImageData — pdfjs-dist tries to polyfill but warns if missing; stub it
+  if (typeof g.ImageData === "undefined") {
+    g.ImageData = class ImageDataStub {
+      data: Uint8ClampedArray; width: number; height: number;
+      constructor(sw: number | Uint8ClampedArray, sh?: number, _sh2?: number) {
+        if (typeof sw === "number") {
+          this.width = sw; this.height = sh ?? 0;
+          this.data = new Uint8ClampedArray(this.width * this.height * 4);
+        } else {
+          this.data = sw; this.width = sh ?? 0; this.height = _sh2 ?? 0;
+        }
+      }
+    };
+  }
+}
+
+/**
  * Lazy-load pdfjs-dist legacy build for Node.js server environment.
- * Loads the worker inline to avoid unhandled rejections from worker threads.
+ * Polyfills DOM APIs first, then loads the worker inline.
  */
 async function getPDFJS(): Promise<PDFJSModule> {
   if (pdfjsModule) return pdfjsModule;
 
-  // Use legacy build for Node.js compatibility (no DOMMatrix dependency)
+  // Must polyfill BEFORE importing pdfjs-dist
+  ensureDOMPolyfills();
+
+  // Use legacy build for Node.js compatibility
   pdfjsModule = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
-  // Load worker
+  // Load worker inline
   await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
 
   return pdfjsModule;

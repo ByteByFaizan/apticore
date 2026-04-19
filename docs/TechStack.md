@@ -202,24 +202,29 @@ The AI pipeline is the operational heart of AptiCore. It runs entirely in JavaSc
 
 ### 3.2 Model Configuration
 
-| Model | Task | Temperature | Max Tokens | JSON Mode |
-|-------|------|-------------|------------|-----------|
-| `gemini-2.5-pro` | Resume parsing (structured extraction) | 0 | 4,096 | ✅ |
-| `gemini-2.5-pro` | JD requirement extraction | 0 | 2,048 | ✅ |
-| `gemini-2.5-flash` | Explanation generation | 0.2 | 300 | ❌ |
-| `gemini-embedding-001` | Semantic skill matching (vector embeddings) | — | — | — |
+| Model | Task | Temperature | topK | topP | Max Tokens | JSON Mode |
+|-------|------|-------------|------|------|------------|-----------|
+| `gemini-2.5-pro` | Resume parsing (structured extraction) | 0 | 1 | 1 | 4,096 | ✅ |
+| `gemini-2.5-pro` | JD requirement extraction | 0 | 1 | 1 | 2,048 | ✅ |
+| `gemini-2.5-flash` | Explanation generation | 0 | 1 | 1 | 800 | ❌ |
+| `gemini-embedding-001` | Semantic skill matching (vector embeddings) | — | — | — | — | — |
 
-- **Why Pro for parsing:** Resume and JD parsing require high accuracy for structured JSON extraction. Zero temperature (0) ensures deterministic, consistent output.
-- **Why Flash for explanations:** Explanations are simpler text generation that benefit from speed over depth. Slightly higher temperature (0.2) allows natural language variation.
+- **Why Pro for parsing:** Resume and JD parsing require high accuracy for structured JSON extraction. Zero temperature + topK=1 + topP=1 (greedy decoding) ensures fully deterministic, consistent output.
+- **Why Flash for explanations:** Explanations are simpler text generation that benefit from speed over depth. Also configured with deterministic settings (temp=0, topK=1) for consistent output across runs.
 - **Why separate embedding model:** `gemini-embedding-001` is Google's current recommended embedding model — dedicated to producing high-quality vector representations.
 
 ### 3.3 Reliability & Resilience
 
 **Exponential Backoff Retry** (`withRetry()`):
-- Max 3 retries with delays: 1s → 2s → 4s + random jitter (0–500ms)
+- Max 3 retries with delays: 1s → 2s → 4s + fixed 250ms jitter (deterministic, no `Math.random()`)
 - Retryable HTTP codes: `429` (rate limit), `500` (server error), `503` (service unavailable), `408` (timeout)
 - Transient error detection: `ECONNRESET`, `ECONNREFUSED`, `socket hang up`, `fetch failed`, `timeout`, `network`, `aborted`
 - Non-retryable errors (400, 401, 403) fail immediately.
+
+**Zod Schema Validation (AI Outputs):**
+- All AI-generated JSON outputs are validated against Zod schemas (`ResumeParseSchema`, `JDRequirementsSchema`)
+- Malformed responses trigger a correction prompt sent back to the model for self-repair
+- Ensures structurally valid data reaches the matching engine
 
 **Graceful Degradation:**
 - If semantic embedding fails → falls back to keyword-only matching (no score boost)
@@ -248,7 +253,7 @@ The AI pipeline is the operational heart of AptiCore. It runs entirely in JavaSc
 - **PII Stripping:** Emails, phones, URLs, LinkedIn/GitHub profiles → placeholder tokens
 - **Identity Masking:** Institution names (IIT, NIT, IIIT, BITS, ISI) → `[INSTITUTION]`, gendered pronouns → "they"
 - **Candidate IDs:** `C-001`, `C-002`, etc.
-- **Order Shuffling:** Array randomized to prevent position-based inference
+- **Order Shuffling:** Array shuffled using **deterministic seeded PRNG** (Mulberry32 with DJB2 hash of `batchId`) — same batch always produces same order, enabling reproducible results
 - **Regex Safety:** Factory functions create fresh `/g` RegExp instances per call to avoid stateful `lastIndex` bugs
 
 #### Hybrid Matcher (`src/lib/matcher.ts`)
@@ -287,7 +292,7 @@ The AI pipeline is the operational heart of AptiCore. It runs entirely in JavaSc
 
 | Format | Library | Method |
 |--------|---------|--------|
-| **PDF** | `pdf-parse` (v1.1.1) | Binary buffer → `pdf(buffer)` → extracted text |
+| **PDF** | `pdfjs-dist` (v5.6, legacy build) | Buffer → PDF.js `getDocument()` → position-aware `getTextContent()` → multi-column layout detection → text cleaning pipeline |
 | **DOCX** | `JSZip` (v3.10.1) | ZIP archive → `word/document.xml` → `<w:t>` tag extraction → paragraph assembly |
 | **TXT** | Native `Buffer.toString()` | UTF-8 decoding with BOM handling |
 
@@ -546,7 +551,7 @@ sequenceDiagram
 | **Background processing** | `after()` | Client gets 200 immediately; heavy pipeline runs asynchronously |
 | **Chunked Firestore writes** | `firestore.ts` | Respects 500-op batch limit by splitting large write sets |
 | **Module-level hoisting** | Throughout | RegExp patterns, education maps, alias maps, constants initialized once |
-| **`serverExternalPackages`** | `next.config.ts` | `pdf-parse` excluded from Webpack bundling — loaded as native Node module |
+| **`serverExternalPackages`** | `next.config.ts` | `pdfjs-dist` excluded from Webpack bundling — loaded as native Node module (prevents `Object.defineProperty` crashes) |
 
 ---
 
@@ -566,7 +571,7 @@ sequenceDiagram
 | `zod` | ^4.3.6 | Runtime schema validation with TypeScript inference |
 | `zustand` | ^5.0.5 | Lightweight state management (3 stores) |
 | `recharts` | ^2.15.3 | React charting library for bias visualizations |
-| `pdf-parse` | ^1.1.1 | PDF text extraction |
+| `pdfjs-dist` | ^5.6.1 | PDF text extraction (Mozilla PDF.js, legacy Node.js build) |
 | `jszip` | ^3.10.1 | DOCX (ZIP archive) text extraction |
 
 ### Development Dependencies

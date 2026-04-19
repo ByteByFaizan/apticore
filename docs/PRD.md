@@ -62,7 +62,7 @@ CREATED → UPLOADING → PARSING → ANALYZING_BIAS_BEFORE → ANONYMIZING → 
 - **Recruiter uploads:** Job Description (JD) text + candidate resumes (PDF, DOCX, TXT).
 - **JD Extraction:** Gemini 2.5 Pro extracts structured requirements — `requiredSkills`, `preferredSkills`, `minimumExperience`, `educationLevel` — with strict classification rules distinguishing "must-have" from "nice-to-have" skills.
 - **Resume Parsing:** Each resume is parsed via Gemini 2.5 Pro into a structured `CandidateRawData` profile containing: name, email, gender (pronoun-only detection — never from names), college (with tier classification: tier1/tier2/tier3), location (with urban/suburban/rural classification), skills (exhaustive: 8 categories), experience, projects, and education.
-- **File Processing:** Magic-byte detection identifies PDF vs DOCX vs TXT regardless of file extension. PDF extraction via `pdf-parse`, DOCX via `JSZip` (extracts `<w:t>` tags from `word/document.xml`), plain text with UTF-8 BOM handling.
+- **File Processing:** Magic-byte detection identifies PDF vs DOCX vs TXT regardless of file extension. PDF extraction via **`pdfjs-dist`** (Mozilla PDF.js v5.6) with position-aware text extraction and multi-column layout detection. DOCX via `JSZip` (extracts `<w:t>` tags from `word/document.xml`). Plain text with UTF-8 BOM handling. Full text cleaning pipeline: Unicode normalization, ligature expansion, section header normalization.
 - **Deduplication:** Content hashing (DJB2) prevents re-parsing identical resumes across uploads.
 - **Input Truncation:** Resumes capped at 15,000 chars, JDs at 10,000 chars to stay within AI context windows.
 
@@ -88,7 +88,7 @@ CREATED → UPLOADING → PARSING → ANALYZING_BIAS_BEFORE → ANONYMIZING → 
 - **PII Masking:** Strips emails → `[EMAIL]`, phone numbers → `[PHONE]`, URLs → `[URL]`, LinkedIn/GitHub profiles → `[LINKEDIN]`/`[GITHUB]`.
 - **Identity Masking:** Replaces prestigious institution names (IIT, NIT, IIIT, BITS, ISI) with `[INSTITUTION]`. Replaces gendered pronouns (he/she/him/her) with "they."
 - **Candidate ID Assignment:** Each candidate becomes an anonymized entity (e.g., `C-001`, `C-002`).
-- **Order Shuffling:** Candidate array is shuffled randomly to prevent position-based inference.
+- **Order Shuffling:** Candidate array is shuffled using a **deterministic seeded PRNG** (Mulberry32 with DJB2 hash of `batchId`) to prevent position-based inference while ensuring reproducible results.
 - **Data Preserved:** Only skills, experience years, scrubbed project/experience descriptions, education level (degree only, no institution), and technologies.
 
 #### Step 5 — Skill-Based Evaluation Engine (Hybrid Matching)
@@ -223,8 +223,8 @@ CREATED → UPLOADING → PARSING → ANALYZING_BIAS_BEFORE → ANONYMIZING → 
 | **Next.js API Routes** | 15.3.1 | RESTful serverless endpoints |
 | **Firebase Admin SDK** | 13.8.0 | Server-side Firestore operations, token verification |
 | **Google Generative AI** | 0.24.1 | Gemini 2.5 Pro/Flash for parsing, JD extraction, explanations |
-| **Zod** | 4.3.6 | Request body validation schemas |
-| **pdf-parse** | 1.1.1 | PDF text extraction |
+| **Zod** | 4.3.6 | Request body + AI output validation schemas |
+| **pdfjs-dist** | 5.6.1 | PDF text extraction (Mozilla PDF.js, legacy build for Node.js) |
 | **JSZip** | 3.10.1 | DOCX (ZIP archive) text extraction |
 
 **API Route Inventory:**
@@ -313,14 +313,16 @@ jobBatches/{batchId}
 
 ### 4.5 AI Model Configuration
 
-| Model | Usage | Temperature | Max Tokens |
-|-------|-------|-------------|------------|
-| `gemini-2.5-pro` | Resume parsing, JD extraction | 0 | 4096 / 2048 |
-| `gemini-2.5-flash` | Explanation generation | 0.2 | 300 |
-| `gemini-embedding-001` | Semantic skill matching (vector embeddings) | — | — |
+| Model | Usage | Temperature | topK | topP | Max Tokens |
+|-------|-------|-------------|------|------|------------|
+| `gemini-2.5-pro` | Resume parsing, JD extraction | 0 | 1 | 1 | 4096 / 2048 |
+| `gemini-2.5-flash` | Explanation generation | 0 | 1 | 1 | 800 |
+| `gemini-embedding-001` | Semantic skill matching (vector embeddings) | — | — | — | — |
 
-**Reliability Features:**
-- **Exponential backoff retry:** Max 3 retries with 1s/2s/4s delays + jitter on HTTP 429, 500, 503, 408 errors.
+**Reliability & Determinism Features:**
+- **Fully deterministic output:** `temperature: 0`, `topK: 1`, `topP: 1` (greedy decoding) ensures same input → same output.
+- **Zod schema validation:** All AI outputs validated against strict schemas. Malformed JSON triggers a correction prompt and retry.
+- **Exponential backoff retry:** Max 3 retries with 1s/2s/4s delays + fixed 250ms jitter on HTTP 429, 500, 503, 408 errors.
 - **Transient error detection:** Retries on timeout, ECONNRESET, socket hang up, fetch failed, network errors.
 - **SDK instance caching:** Singleton pattern for `GoogleGenerativeAI` client.
 - **Input truncation:** Resumes capped at 15K chars, JDs at 10K chars.
@@ -480,7 +482,10 @@ AptiCore uses **Zustand** (v5) with three independent stores:
 | Decision | Rationale |
 |----------|-----------|
 | **Gemini Pro for parsing, Flash for explanations** | Parsing requires high accuracy (structured JSON extraction). Explanations are simpler and benefit from speed. |
-| **Hybrid matching (keyword + semantic)** | Keyword matching is reliable and fast. Semantic matching catches higher-order skill relationships but is less deterministic — used as a boost, not replacement. |
+| **Hybrid matching (keyword + semantic)** | Keyword matching is reliable and fast. Semantic matching catches higher-order skill relationships — used as a boost (30%), not replacement. |
+| **pdfjs-dist over pdf-parse** | `pdf-parse` is abandoned (last update 2017) and bundles pdfjs-dist v1.10 internally, causing webpack crashes. Modern `pdfjs-dist` v5.6 (legacy build) provides reliable, position-aware extraction. |
+| **Deterministic AI output** | `temperature: 0` + `topK: 1` + `topP: 1` (greedy decoding) ensures same resume always produces same parse result. Zod validates all AI outputs. |
+| **Seeded PRNG for anonymization** | `Math.random()` replaced with Mulberry32 seeded by DJB2 hash of `batchId`. Same batch always produces same candidate ordering. |
 | **Simulated biased pipeline for "before"** | Ethical constraint: we can't use a real biased pipeline. Simulating one with documented weights demonstrates the concept convincingly. |
 | **`after()` for pipeline execution** | Returns 200 to client immediately. Pipeline runs in background without blocking the response — prevents user-facing timeouts. |
 | **In-Firestore resume storage** | Stores file content as base64 in Firestore (not GCS) for simplicity in hackathon context. Trade-off: larger documents, but eliminates signed URL complexity. |
