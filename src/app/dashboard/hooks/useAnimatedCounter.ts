@@ -38,7 +38,7 @@ export function useAnimatedCounter(
 
     rafId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafId);
-  }, [target, isVisible, duration]);
+  }, [target, isVisible, duration, resetKey]);
 
   return count;
 }

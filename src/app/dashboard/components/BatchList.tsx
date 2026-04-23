@@ -28,7 +28,7 @@ export default function BatchList({
   const { ref, isVisible } = useScrollReveal(0.05);
 
   return (
-    <section ref={ref}>
+    <section ref={ref} aria-label="Recent hiring batches">
       {/* Section header */}
       <div
         className="flex items-center gap-4 mb-5"

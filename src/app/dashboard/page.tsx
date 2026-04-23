@@ -161,12 +161,12 @@ export default function DashboardPage() {
 
       {/* ── Candidates ── */}
       {selectedView === "candidates" && (
-        <CandidateList activeBatch={activeBatch} candidates={candidates} />
+        <CandidateList activeBatch={activeBatch} candidates={candidates} loading={loading} />
       )}
 
       {/* ── Bias Report ── */}
       {selectedView === "bias-report" && (
-        <BiasReportView biasReport={biasReport} />
+        <BiasReportView biasReport={biasReport} activeBatch={activeBatch} loading={loading} />
       )}
 
       {/* ── Create Modal ── */}

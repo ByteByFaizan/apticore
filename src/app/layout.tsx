@@ -53,8 +53,9 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${plusJakarta.variable} ${dmSans.variable} ${lobster.variable} antialiased`}
+      suppressHydrationWarning
     >
-      <body className="font-body antialiased">
+      <body className="font-body antialiased" suppressHydrationWarning>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

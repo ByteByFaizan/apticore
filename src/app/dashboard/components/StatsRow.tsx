@@ -85,10 +85,12 @@ export default function StatsRow({ batches, resetKey }: StatsRowProps) {
     },
     {
       label: "Avg Fairness Lift",
-      value: c2,
-      suffix: "%",
-      prefix: "+",
-      sub: `from ${completedBatches.length} batch${completedBatches.length !== 1 ? "es" : ""}`,
+      value: completedBatches.length > 0 ? c2 : "—",
+      suffix: completedBatches.length > 0 ? "%" : "",
+      ...(avgImprovement > 0 && completedBatches.length > 0 ? { prefix: "+" } : {}),
+      sub: completedBatches.length > 0
+        ? `from ${completedBatches.length} batch${completedBatches.length !== 1 ? "es" : ""}`
+        : "no completed batches yet",
       icon: Icons.fairness,
       accent: "from-emerald/10 to-emerald/5",
       iconBg: "bg-emerald/10",

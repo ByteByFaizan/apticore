@@ -67,6 +67,11 @@ export default function FairnessScoreCard({
         <div className="flex justify-center mb-2 sm:mb-3">
           <div
             className="relative w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center"
+            role="meter"
+            aria-valuenow={score}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${label} fairness score: ${score} out of 100`}
             style={{
               transform: isVisible ? "scale(1)" : "scale(0.8)",
               opacity: isVisible ? 1 : 0,
@@ -102,11 +107,14 @@ export default function FairnessScoreCard({
                 style={{ transition: "stroke-dashoffset 1.6s cubic-bezier(0.4,0,0.2,1) 0.3s" }}
               />
             </svg>
-            <span
-              className={`text-3xl sm:text-4xl font-bold font-display tabular-nums ${scoreColor}`}
-            >
-              {animated}
-            </span>
+            <div className="flex flex-col items-center">
+              <span
+                className={`text-3xl sm:text-4xl font-bold font-display tabular-nums ${scoreColor}`}
+              >
+                {animated}
+              </span>
+              <span className="text-[10px] text-ink-faint font-medium -mt-0.5">/100</span>
+            </div>
           </div>
         </div>
 

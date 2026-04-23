@@ -1,14 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useScrollReveal, revealStyle } from "../hooks/useScrollReveal";
 import FairnessScoreCard from "./FairnessScoreCard";
 import DistributionChart from "./DistributionChart";
 import EmptyState from "./EmptyState";
-import type { BiasReport } from "@/lib/types";
+import type { BiasReport, JobBatch } from "@/lib/types";
 
 interface BiasReportViewProps {
   biasReport: BiasReport | null;
+  activeBatch?: JobBatch | null;
+  loading?: boolean;
 }
 
 /** Small icon SVGs for each metric */
@@ -38,11 +40,62 @@ const METRIC_ICONS: Record<string, React.ReactNode> = {
   ),
 };
 
-export default function BiasReportView({ biasReport }: BiasReportViewProps) {
+/* ── Loading Skeleton ── */
+function BiasReportSkeleton() {
+  return (
+    <div className="animate-pulse" aria-busy="true" aria-label="Loading bias report">
+      {/* Insight banner skeleton */}
+      <div className="mb-6 rounded-2xl border border-edge bg-surface-alt/50 p-5 h-24" />
+
+      {/* Score cards skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
+        <div className="rounded-2xl border border-edge bg-white p-6 h-52">
+          <div className="h-3 w-24 bg-edge rounded mx-auto mb-6" />
+          <div className="w-24 h-24 rounded-full bg-edge/60 mx-auto mb-3" />
+          <div className="h-3 w-16 bg-edge rounded mx-auto" />
+        </div>
+        <div className="rounded-2xl border border-edge bg-white p-6 h-52">
+          <div className="h-3 w-24 bg-edge rounded mx-auto mb-6" />
+          <div className="w-24 h-24 rounded-full bg-edge/60 mx-auto mb-3" />
+          <div className="h-3 w-16 bg-edge rounded mx-auto" />
+        </div>
+      </div>
+
+      {/* Improvements skeleton */}
+      <div className="mb-8">
+        <div className="h-5 w-48 bg-edge rounded mb-5" />
+        <div className="space-y-3">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="rounded-xl border border-edge bg-white p-5 h-28" />
+          ))}
+        </div>
+      </div>
+
+      {/* Distribution skeleton */}
+      <div>
+        <div className="h-5 w-40 bg-edge rounded mb-5" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="rounded-2xl border border-edge bg-white p-5 h-52" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function BiasReportView({ biasReport, activeBatch, loading }: BiasReportViewProps) {
   const insightReveal = useScrollReveal(0.1, biasReport?.batchId);
   const scoresReveal = useScrollReveal(0.1, biasReport?.batchId);
   const improvementsReveal = useScrollReveal(0.1, biasReport?.batchId);
+  const howItWorksReveal = useScrollReveal(0.1, biasReport?.batchId);
   const distributionReveal = useScrollReveal(0.1, biasReport?.batchId);
+  const [methodologyOpen, setMethodologyOpen] = useState(false);
+
+  /* ── Loading state ── */
+  if (loading && !biasReport) {
+    return <BiasReportSkeleton />;
+  }
 
   if (!biasReport) {
     return (
@@ -82,9 +135,37 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
 
   return (
     <div>
+      {/* ── Batch Context Header ── */}
+      {activeBatch && (
+        <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted">
+          <span className="inline-flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z" />
+              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+            </svg>
+            <span className="font-medium text-ink">{activeBatch.jdRequirements?.title || "Job Batch"}</span>
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+            {activeBatch.candidateCount} candidates
+          </span>
+          {activeBatch.completedAt && (
+            <span className="inline-flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+              {new Date(activeBatch.completedAt).toLocaleDateString("en-US", {
+                month: "short", day: "numeric", year: "numeric",
+                hour: "2-digit", minute: "2-digit",
+              })}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* ── Overall Insight Banner ── */}
       <div
         ref={insightReveal.ref}
+        role="status"
+        aria-label={`Fairness improvement: ${improvement} points`}
         className={`mb-4 sm:mb-6 rounded-2xl border bg-gradient-to-r ${improvementBg} p-4 sm:p-5 transition-all duration-500`}
         style={revealStyle(insightReveal.isVisible, 0, 0)}
       >
@@ -117,6 +198,33 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* ── SDG-10 Alignment Badge ── */}
+      <div className="mb-5 sm:mb-6 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-sky-50/80 border border-sky-200/40">
+        <div className="shrink-0 w-8 h-8 rounded-lg bg-[#DD1367] flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-sky-800">
+            UN SDG 10 — Reduced Inequalities
+          </p>
+          <p className="text-[11px] text-sky-600 leading-snug mt-0.5">
+            AptiCore actively reduces hiring inequality by removing demographic bias from candidate evaluation.
+          </p>
+        </div>
+        <a
+          href="https://sdgs.un.org/goals/goal10"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] text-sky-500 hover:text-sky-700 underline underline-offset-2 shrink-0"
+        >
+          Learn more ↗
+        </a>
       </div>
 
       {/* ── Fairness Score Comparison ── */}
@@ -156,6 +264,68 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
           <div className="flex-1 h-px bg-gradient-to-r from-edge to-transparent" />
         </div>
 
+        {/* ── Methodology Transparency (Collapsible) ── */}
+        <div
+          className="mb-4 rounded-xl border border-edge bg-surface-alt/40 overflow-hidden transition-all duration-300"
+          style={revealStyle(improvementsReveal.isVisible, 0, 0.05)}
+        >
+          <button
+            onClick={() => setMethodologyOpen(!methodologyOpen)}
+            className="w-full flex items-center justify-between px-4 py-3 text-left cursor-pointer hover:bg-surface-alt/80 transition-colors"
+            aria-expanded={methodologyOpen}
+          >
+            <div className="flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-ink-muted">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4" />
+                <path d="M12 8h.01" />
+              </svg>
+              <span className="text-xs font-semibold text-ink-light">How We Calculate Fairness</span>
+            </div>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              className={`text-ink-faint transition-transform duration-300 ${methodologyOpen ? "rotate-180" : ""}`}
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+          <div
+            className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              methodologyOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+            } overflow-hidden`}
+          >
+            <div className="px-4 pb-4 space-y-3 text-xs text-ink-light leading-relaxed">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-white rounded-lg border border-edge p-3">
+                  <p className="font-semibold text-ink mb-1">Gender Parity (30%)</p>
+                  <p>Min/Max ratio of male vs. female representation in top-half selections. Score of 1.0 = perfect parity.</p>
+                </div>
+                <div className="bg-white rounded-lg border border-edge p-3">
+                  <p className="font-semibold text-ink mb-1">College Bias Index (25%)</p>
+                  <p>Shannon entropy of college tier distribution. Lower entropy = higher concentration bias. Normalized 0→1.</p>
+                </div>
+                <div className="bg-white rounded-lg border border-edge p-3">
+                  <p className="font-semibold text-ink mb-1">Location Bias Index (20%)</p>
+                  <p>Shannon entropy of geographic distribution. Measures urban/suburban/rural concentration in selections.</p>
+                </div>
+                <div className="bg-white rounded-lg border border-edge p-3">
+                  <p className="font-semibold text-ink mb-1">Merit Purity (25%)</p>
+                  <p>Inverse of non-skill attribute weight. Measures how much identity factors influence final ranking.</p>
+                </div>
+              </div>
+              <p className="text-[11px] text-ink-faint pt-1 border-t border-edge/50">
+                <strong>Formula:</strong> Fairness Score = (Gender Parity × 30) + ((1 − College Bias) × 25) + ((1 − Location Bias) × 20) + ((1 − Non-Skill Weight) × 25). Range: 0–100.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-3">
           {biasReport.improvements.map((imp, i) => {
             // For all metrics, positive delta = improvement (green)
@@ -185,6 +355,8 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
                 key={imp.metric}
                 className="bg-white rounded-xl border border-edge p-4 sm:p-5 transition-all duration-300 hover:shadow-[0_4px_16px_rgba(28,63,58,0.04)]"
                 style={revealStyle(improvementsReveal.isVisible, i, 0.1)}
+                role="group"
+                aria-label={`${imp.metric}: ${imp.delta > 0 ? "+" : ""}${imp.delta}% change`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2.5">
@@ -207,7 +379,7 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
 
                 {/* Before → After bars */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                  <div className="flex-1">
+                  <div className="flex-1" title={`Traditional pipeline: ${clampedBefore}%`}>
                     <p className="text-[10px] text-ink-faint font-medium mb-1">
                       Traditional · {clampedBefore}%
                     </p>
@@ -218,6 +390,8 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
                       />
                     </div>
                   </div>
+                  {/* Arrow: visible on desktop, "vs" label on mobile */}
+                  <span className="text-[10px] text-ink-faint font-semibold sm:hidden text-center">vs</span>
                   <svg
                     width="14"
                     height="14"
@@ -232,7 +406,7 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
                     <path d="M5 12h14" />
                     <path d="M12 5l7 7-7 7" />
                   </svg>
-                  <div className="flex-1">
+                  <div className="flex-1" title={`AptiCore pipeline: ${clampedAfter}%`}>
                     <p className="text-[10px] text-ink-faint font-medium mb-1">
                       AptiCore · {clampedAfter}%
                     </p>
@@ -251,8 +425,11 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
       </section>
 
       {/* ── How It Works — mini explainer ── */}
-      <section className="mb-8">
-        <div className="bg-gradient-to-br from-[#1C3F3A] to-[#2A5A52] rounded-2xl p-4 sm:p-6 text-white">
+      <section ref={howItWorksReveal.ref} className="mb-8">
+        <div
+          className="bg-gradient-to-br from-[#1C3F3A] to-[#2A5A52] rounded-2xl p-4 sm:p-6 text-white"
+          style={revealStyle(howItWorksReveal.isVisible, 0, 0)}
+        >
           <h3 className="text-sm font-semibold font-display tracking-tight mb-3 text-white/90">
             How AptiCore Reduces Bias
           </h3>
@@ -261,10 +438,11 @@ export default function BiasReportView({ biasReport }: BiasReportViewProps) {
               { step: "1", title: "Detect", desc: "Analyze candidate pool for demographic patterns and unconscious bias signals" },
               { step: "2", title: "Anonymize", desc: "Strip names, gender, college names, and location — keep only skills & experience" },
               { step: "3", title: "Rank by Merit", desc: "Hybrid AI matching scores candidates on skill fit alone — identity-blind" },
-            ].map((item) => (
+            ].map((item, idx) => (
               <div
                 key={item.step}
                 className="flex gap-3"
+                style={revealStyle(howItWorksReveal.isVisible, idx, 0.12)}
               >
                 <div className="shrink-0 w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold text-white/80">
                   {item.step}

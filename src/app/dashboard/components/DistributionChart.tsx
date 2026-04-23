@@ -28,6 +28,17 @@ interface DistributionChartProps {
   accentColor?: string;
 }
 
+/** Generate lighter shades of a hex color for multi-bar distinction */
+function hexToShades(hex: string, count: number): string[] {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return Array.from({ length: count }, (_, i) => {
+    const factor = 1 - i * (0.18 / Math.max(count - 1, 1));
+    return `rgba(${r},${g},${b},${Math.max(factor, 0.55).toFixed(2)})`;
+  });
+}
+
 export default function DistributionChart({
   title,
   data,
@@ -37,6 +48,11 @@ export default function DistributionChart({
     name: key.charAt(0).toUpperCase() + key.slice(1),
     value: Math.round(val * 100),
   }));
+
+  // When accentColor is set, generate distinct shades instead of flat same color
+  const barColors = accentColor
+    ? hexToShades(accentColor, chartData.length)
+    : CHART_COLORS;
 
   return (
     <div className="bg-white rounded-2xl border border-edge p-3 sm:p-5 transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)]" role="img" aria-label={`${title} chart`}>
@@ -82,10 +98,10 @@ export default function DistributionChart({
               cursor={{ fill: "rgba(28,63,58,0.03)" }}
             />
             <Bar dataKey="value" radius={[6, 6, 0, 0]} animationDuration={1200}>
-              {chartData.map((_, i) => (
+              {chartData.map((entry, i) => (
                 <Cell
-                  key={i}
-                  fill={accentColor || CHART_COLORS[i % CHART_COLORS.length]}
+                  key={`${entry.name}-${i}`}
+                  fill={accentColor ? barColors[i % barColors.length] : CHART_COLORS[i % CHART_COLORS.length]}
                   opacity={0.85}
                 />
               ))}

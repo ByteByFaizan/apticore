@@ -20,8 +20,19 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
   const raw = candidate.rawData;
   const anon = candidate.anonymizedData;
 
+  // Count matched vs total skills
+  const matchedSkills = candidate.skillBreakdown.filter((s) => s.matched).length;
+  const totalSkills = candidate.skillBreakdown.length;
+  const requiredMissing = candidate.skillBreakdown.filter(
+    (s) => s.required && !s.matched
+  ).length;
+
   return (
-    <div className="group bg-white rounded-xl border border-edge hover:border-brand/20 p-4 sm:p-5 transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)] hover:-translate-y-0.5">
+    <div
+      className="group bg-white rounded-xl border border-edge hover:border-brand/20 p-4 sm:p-5 transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)] hover:-translate-y-0.5"
+      role="article"
+      aria-label={`Candidate ${anon.candidateId}, rank ${candidate.rank}, match score ${candidate.matchScore} out of 100`}
+    >
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
         {/* Left — Details */}
         <div className="flex-1 min-w-0">
@@ -41,8 +52,22 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
             </span>
             {/* Semantic boost badge */}
             {(candidate.semanticBoost ?? 0) > 0 && (
-              <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-[11px] text-indigo-600 font-semibold" title="Semantic matching boost from AI embeddings">
+              <span
+                className="px-2 py-0.5 rounded-full bg-indigo-50 text-[11px] text-indigo-600 font-semibold"
+                title="AI semantic matching boost — candidate's experience closely matches JD intent beyond keyword overlap"
+              >
                 +{candidate.semanticBoost} semantic
+              </span>
+            )}
+            {/* Parse status badge */}
+            {candidate.parseStatus === "PARSE_FAILED" && (
+              <span className="px-2 py-0.5 rounded-full bg-red-50 text-[11px] text-red-500 font-semibold" title="Resume parsing encountered errors — scores may be less accurate">
+                ⚠ Parse error
+              </span>
+            )}
+            {candidate.parseStatus === "NEEDS_OCR" && (
+              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-[11px] text-amber-600 font-semibold" title="Resume required OCR — text extraction from scanned document">
+                ⚠ OCR
               </span>
             )}
           </div>
@@ -54,7 +79,7 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
                 key={skill}
                 className="px-2 py-0.5 rounded-full bg-brand/5 text-xs text-brand/80 font-medium hover:bg-brand/10 transition-colors duration-200"
               >
-                {skill}
+              {skill}
               </span>
             ))}
             {anon.skills.length > 8 && (
@@ -70,26 +95,44 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
           </p>
         </div>
 
-        {/* Right — Score ring */}
+        {/* Right — Score ring with /100 label */}
         <div className="sm:ml-4 text-center shrink-0 flex sm:flex-col items-center sm:items-center gap-2 sm:gap-0">
           <div
             className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full border-[3px] sm:border-[3.5px] flex items-center justify-center ${scoreColor.ring} ${scoreColor.bg} transition-all duration-300 group-hover:scale-105`}
+            role="meter"
+            aria-valuenow={candidate.matchScore}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Match score: ${candidate.matchScore} out of 100`}
           >
             <span className={`text-base sm:text-lg font-bold tabular-nums ${scoreColor.text}`}>
               {candidate.matchScore}
             </span>
           </div>
-          <p className="text-[10px] text-ink-faint mt-1.5 font-medium uppercase tracking-wider">
-            Match
-          </p>
+          <div className="sm:mt-1.5">
+            <p className="text-[10px] text-ink-faint font-medium uppercase tracking-wider">
+              Match
+            </p>
+            <p className="text-[9px] text-ink-faint/60 tabular-nums">/100</p>
+          </div>
         </div>
       </div>
 
       {/* Skill breakdown */}
       <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-edge/50">
-        <p className="text-[10px] text-ink-faint font-semibold mb-2 uppercase tracking-[0.1em]">
-          Skill Breakdown
-        </p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] text-ink-faint font-semibold uppercase tracking-[0.1em]">
+            Skill Breakdown
+          </p>
+          <p className="text-[10px] text-ink-faint tabular-nums">
+            <span className="text-emerald font-semibold">{matchedSkills}</span>
+            <span className="mx-0.5">/</span>
+            <span>{totalSkills} matched</span>
+            {requiredMissing > 0 && (
+              <span className="text-red-400 ml-1.5">· {requiredMissing} required missing</span>
+            )}
+          </p>
+        </div>
         <div className="flex flex-wrap gap-1 sm:gap-1.5">
           {candidate.skillBreakdown.map((s) => (
             <span
@@ -101,9 +144,21 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
                   ? "bg-red-50 text-red-600"
                   : "bg-gray-50 text-gray-500"
               }`}
+              title={
+                s.matched
+                  ? `${s.skill} — matched${s.confidence ? ` (${Math.round(s.confidence * 100)}% confidence)` : ""}`
+                  : s.required
+                  ? `${s.skill} — required but not found in resume`
+                  : `${s.skill} — optional, not found`
+              }
             >
               <span className="text-[10px]">{s.matched ? "✓" : "✗"}</span>
               {s.skill}
+              {s.matched && s.confidence != null && s.confidence < 1 && (
+                <span className="text-[9px] opacity-50 tabular-nums">
+                  {Math.round(s.confidence * 100)}%
+                </span>
+              )}
               {s.required && !s.matched && (
                 <span className="text-[9px] opacity-60">req</span>
               )}
@@ -120,6 +175,8 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
             setShowOriginal(!showOriginal);
           }}
           className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-faint hover:text-brand transition-colors cursor-pointer"
+          aria-expanded={showOriginal}
+          aria-controls={`original-data-${candidate.id}`}
         >
           <svg
             width="14"
@@ -141,7 +198,10 @@ export default function CandidateCard({ candidate }: CandidateCardProps) {
         </button>
 
         {showOriginal && raw && (
-          <div className="mt-3 p-3 sm:p-4 bg-gradient-to-br from-amber-50/60 to-orange-50/30 rounded-xl border border-amber-100 animate-fade-in-up">
+          <div
+            id={`original-data-${candidate.id}`}
+            className="mt-3 p-3 sm:p-4 bg-gradient-to-br from-amber-50/60 to-orange-50/30 rounded-xl border border-amber-100 animate-fade-in-up"
+          >
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
               {/* Name */}
               <div>

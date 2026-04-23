@@ -38,6 +38,19 @@ const UNDELETABLE_STATES = new Set<ProcessingStatus>([
   "MATCHING", "RANKING", "EXPLAINING", "ANALYZING_BIAS_AFTER",
 ]);
 
+/** Client-safe date formatter — returns empty string during SSR */
+function useClientDate(isoString: string, options?: Intl.DateTimeFormatOptions) {
+  const [formatted, setFormatted] = useState("");
+  useEffect(() => {
+    setFormatted(
+      new Date(isoString).toLocaleDateString("en-US", options ?? {
+        month: "short", day: "numeric", year: "numeric",
+      })
+    );
+  }, [isoString, options]);
+  return formatted;
+}
+
 interface BatchCardProps {
   batch: JobBatch;
   onView: (batchId: string) => void;
@@ -55,6 +68,8 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const createdDate = useClientDate(batch.createdAt);
 
   // Cleanup timer on unmount to prevent state updates on unmounted component
   useEffect(() => {
@@ -79,10 +94,18 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
   // Pipeline progress: which step are we on?
   const currentStepIdx = PIPELINE_STEPS.indexOf(batch.status);
 
+  // Fairness improvement delta
+  const hasFairness = batch.fairnessScoreBefore != null && batch.fairnessScoreAfter != null;
+  const fairnessDelta = hasFairness
+    ? (batch.fairnessScoreAfter! - batch.fairnessScoreBefore!)
+    : 0;
+
   return (
     <div
       onClick={() => onView(batch.id)}
       className="group bg-white rounded-xl border border-edge hover:border-brand/20 p-4 sm:p-5 cursor-pointer transition-all duration-300 hover:shadow-[0_6px_24px_rgba(28,63,58,0.06)] hover:-translate-y-0.5 active:translate-y-0"
+      role="article"
+      aria-label={`${batch.jdRequirements?.title || "Batch"} — ${cfg.label}, ${batch.candidateCount} candidates`}
     >
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
         {/* Left — Info */}
@@ -95,10 +118,12 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
             {/* Status pill */}
             <span
               className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold shrink-0 ${cfg.bg} ${cfg.text}`}
+              role="status"
             >
               {isProcessing && cfg.dot && (
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${cfg.dot} animate-pulse`}
+                  aria-hidden="true"
                 />
               )}
               {cfg.label}
@@ -106,8 +131,15 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
           </div>
 
           <p className="text-xs text-ink-muted">
-            {batch.candidateCount} candidate{batch.candidateCount !== 1 ? "s" : ""}{" "}
-            · {new Date(batch.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            {batch.candidateCount} candidate{batch.candidateCount !== 1 ? "s" : ""}
+            {createdDate && (
+              <> · {createdDate}</>
+            )}
+            {batch.completedAt && batch.status === "COMPLETE" && (
+              <span className="text-emerald">
+                {" "}· Completed {new Date(batch.completedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </span>
+            )}
           </p>
 
           {/* Error message for failed batches */}
@@ -139,19 +171,25 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
 
         {/* Right — Score + Actions */}
         <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-2">
-          {batch.fairnessScoreBefore != null &&
-            batch.fairnessScoreAfter != null && (
-              <div className="text-right hidden sm:block">
-                <p className="text-[10px] text-ink-faint uppercase tracking-wider font-medium mb-0.5">
-                  Fairness
-                </p>
-                <p className="text-sm font-semibold tabular-nums">
-                  <span className="text-red-500">{batch.fairnessScoreBefore}</span>
-                  <span className="text-ink-faint mx-1.5">→</span>
-                  <span className="text-emerald">{batch.fairnessScoreAfter}</span>
-                </p>
-              </div>
-            )}
+          {/* Fairness scores — visible on all screens now */}
+          {hasFairness && (
+            <div className="text-right">
+              <p className="text-[10px] text-ink-faint uppercase tracking-wider font-medium mb-0.5">
+                Fairness
+              </p>
+              <p className="text-sm font-semibold tabular-nums">
+                <span className="text-red-500">{batch.fairnessScoreBefore}</span>
+                <span className="text-ink-faint mx-1.5">→</span>
+                <span className="text-emerald">{batch.fairnessScoreAfter}</span>
+              </p>
+              {/* Improvement delta — visible inline on mobile, below on desktop */}
+              <p className={`text-[10px] font-semibold tabular-nums mt-0.5 ${
+                fairnessDelta > 0 ? "text-emerald" : fairnessDelta < 0 ? "text-red-400" : "text-ink-faint"
+              }`}>
+                {fairnessDelta > 0 ? "+" : ""}{fairnessDelta} pts improvement
+              </p>
+            </div>
+          )}
 
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
             {batch.status === "COMPLETE" && onView && (
@@ -160,7 +198,7 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
                   e.stopPropagation();
                   onView(batch.id);
                 }}
-                className="px-3 py-1.5 rounded-full bg-gray-100 text-ink text-xs font-medium hover:bg-gray-200 transition-all"
+                className="px-3 py-1.5 rounded-full bg-gray-100 text-ink text-xs font-medium hover:bg-gray-200 transition-all cursor-pointer"
               >
                 View
               </button>
@@ -214,21 +252,40 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
                     ? "bg-red-500 text-white shadow-sm hover:bg-red-600"
                     : "text-ink-faint hover:text-red-500 hover:bg-red-50"
                 }`}
-                title={confirmDelete ? "Click again to confirm" : "Delete batch"}
+                title={confirmDelete ? "Click again to confirm deletion" : "Delete batch"}
+                aria-label={confirmDelete ? "Confirm delete" : "Delete batch"}
               >
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                </svg>
+                {confirmDelete ? (
+                  /* Warning icon for confirm state */
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                ) : (
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                )}
                 {confirmDelete ? "Confirm" : ""}
               </button>
             )}
@@ -238,7 +295,14 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
 
       {/* ── Pipeline Progress Bar — visible during active processing ── */}
       {isProcessing && currentStepIdx >= 0 && (
-        <div className="mt-4 pt-3 border-t border-edge/50 animate-fade-in-up">
+        <div
+          className="mt-4 pt-3 border-t border-edge/50 animate-fade-in-up"
+          role="progressbar"
+          aria-valuenow={currentStepIdx + 1}
+          aria-valuemin={1}
+          aria-valuemax={PIPELINE_STEPS.length}
+          aria-label={`Processing: ${cfg.label} — step ${currentStepIdx + 1} of ${PIPELINE_STEPS.length}`}
+        >
           {/* Bars row — all equal height, no labels inside */}
           <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto">
             {PIPELINE_STEPS.map((step, i) => {
@@ -254,6 +318,7 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
                       ? "bg-brand animate-pulse"
                       : "bg-gray-100"
                   }`}
+                  title={STATUS_CONFIG[step]?.label || step}
                 />
               );
             })}
@@ -263,7 +328,7 @@ export default function BatchCard({ batch, onView, onProcess, onRetry, onDelete 
             <span className="text-[9px] text-brand font-semibold">
               {cfg.label}
             </span>
-            <span className="text-[10px] text-ink-faint">
+            <span className="text-[10px] text-ink-faint tabular-nums">
               Step {currentStepIdx + 1} of {PIPELINE_STEPS.length}
             </span>
           </div>

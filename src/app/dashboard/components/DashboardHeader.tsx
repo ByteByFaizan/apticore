@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useScrollReveal, revealStyle } from "../hooks/useScrollReveal";
 
 interface DashboardHeaderProps {
@@ -13,21 +14,34 @@ export default function DashboardHeader({
 }: DashboardHeaderProps) {
   const { ref, isVisible } = useScrollReveal(0.1);
 
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
+  // Render date only on client to prevent hydration mismatch
+  const [dateStr, setDateStr] = useState("");
+  useEffect(() => {
+    setDateStr(
+      new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      })
+    );
+  }, []);
+
+  // Time-based greeting
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   return (
     <header ref={ref} className="mb-8" style={revealStyle(isVisible, 0, 0.05)}>
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <p className="text-ink-faint text-xs font-semibold tracking-[0.15em] uppercase mb-1.5">
-            {today}
-          </p>
+          {dateStr && (
+            <p className="text-ink-faint text-xs font-semibold tracking-[0.15em] uppercase mb-1.5">
+              {dateStr}
+            </p>
+          )}
           <h1 className="text-ink text-2xl lg:text-[1.75rem] font-bold font-display tracking-tight leading-tight">
-            Welcome back, {userName}
+            {greeting}, {userName}
           </h1>
           <p className="text-ink-muted text-sm mt-1 max-w-md">
             Manage your hiring batches, review candidates, and track bias
