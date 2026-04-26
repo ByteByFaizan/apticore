@@ -584,7 +584,7 @@ export default function PrivacyPage() {
 
                   <div className="mt-8 flex flex-wrap gap-4">
                     <a
-                      href="mailto:support@apticore.vercel.app"
+                      href="mailto:faizan91work@gmail.com"
                       className="inline-flex items-center gap-2 px-6 py-3 bg-white text-brand text-sm font-semibold transition-all duration-300 hover:bg-white/90 hover:shadow-[0_4px_16px_rgba(0,0,0,0.15)]"
                     >
                       <svg

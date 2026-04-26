@@ -64,26 +64,41 @@ export default function Header() {
 
   // Active section tracking via IntersectionObserver
   useEffect(() => {
-    if (pathname !== "/") return;
+    if (pathname !== "/") {
+      setActiveSection("");
+      return;
+    }
     const sectionIds = ["how-it-works", "features", "impact"];
-    const observers: IntersectionObserver[] = [];
+    const visibleSections = new Set<string>();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const id = entry.target.id;
+          if (entry.isIntersecting) {
+            visibleSections.add(id);
+          } else {
+            visibleSections.delete(id);
+          }
+        });
+
+        if (visibleSections.size === 0) {
+          setActiveSection("");
+        } else {
+          // Pick the first section (in DOM order) that is visible
+          const firstVisible = sectionIds.find((id) => visibleSections.has(id));
+          if (firstVisible) setActiveSection(firstVisible);
+        }
+      },
+      { threshold: 0.3, rootMargin: "-80px 0px -40% 0px" }
+    );
 
     sectionIds.forEach((id) => {
       const el = document.getElementById(id);
-      if (!el) return;
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            setActiveSection(id);
-          }
-        },
-        { threshold: 0.3, rootMargin: "-80px 0px -40% 0px" }
-      );
-      observer.observe(el);
-      observers.push(observer);
+      if (el) observer.observe(el);
     });
 
-    return () => observers.forEach((o) => o.disconnect());
+    return () => observer.disconnect();
   }, [pathname]);
 
   useEffect(() => {
