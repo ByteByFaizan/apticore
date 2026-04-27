@@ -181,11 +181,12 @@ CREATED → UPLOADING → PARSING → ANALYZING_BIAS_BEFORE → ANONYMIZING → 
 **Landing Page Sections:**
 1. **Header** — Sticky navigation with responsive hamburger menu, account dropdown with Google/email auth detection, change password (email users only)
 2. **Hero** — "Hire on Skills, Not Stereotypes" tagline, animated dashboard preview showing fairness score improvement (58 → 93), key metrics (35% improvement, <2s per resume, 100% explainable)
-3. **How It Works** — 3-step visual pipeline: Reveal → Remove → Prove
-4. **Features** — AI-Powered Anonymization, Quantifiable Fairness Score, Full Explainability
-5. **SDG Impact** — UN Goals 5, 8, 10 with measurable impact metrics
-6. **Final CTA** — "Ready to Make Hiring Fair?" with sign-up call
-7. **Footer** — Product links, company links, team social profiles (LinkedIn, GitHub)
+3. **Social Proof** — Scrolling logo marquee of trusted organizations
+4. **How It Works** — 3-step visual pipeline: Reveal → Remove → Prove
+5. **Features** — AI-Powered Anonymization, Quantifiable Fairness Score, Full Explainability
+6. **SDG Impact** — UN Goals 5, 8, 10 with measurable impact metrics
+7. **Final CTA** — "Ready to Make Hiring Fair?" with sign-up call
+8. **Footer** — Product links, company links, team social profiles (LinkedIn, GitHub)
 
 **UI Components:**
 - `ScrollProgress` — Page reading progress indicator
@@ -197,6 +198,7 @@ CREATED → UPLOADING → PARSING → ANALYZING_BIAS_BEFORE → ANONYMIZING → 
 - **Login** (`/login`) — Email/password form + Google OAuth, "Remember me", forgot password link, create account toggle
 - **Forgot Password** (`/forgot-password`) — Email-based password reset flow
 - **Auth Action** (`/auth/action`) — Firebase auth action handler (email verification, password reset callbacks)
+- **Privacy Policy** (`/privacy`) — Data handling practices, AI processing transparency, user rights
 
 **Dashboard** (`/dashboard`):
 - **Auth Guard** — Redirects unauthenticated users to `/login?redirect=...`

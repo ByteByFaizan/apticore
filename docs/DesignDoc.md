@@ -779,13 +779,13 @@ Card: scale-95 → scale-100, Y+20 → Y+0 (500ms spring)
 
 | Store | Purpose | Key State |
 |-------|---------|-----------|
-| `useAuthStore` | Authentication state | `user`, `loading`, `signIn()`, `signOut()` |
-| `useBatchStore` | Batch CRUD & processing | `batches[]`, `fetchBatches()`, `createBatch()`, `activeBatchId` |
-| `useDashboardStore` | Dashboard UI state | `activeView`, `selectedBatch`, `sidebarOpen` |
+| `useAuthStore` | Authentication state | `user`, `loading`, `initialized`, `initAuth()`, `logout()`, `getIdToken()` |
+| `useBatchStore` | Batch CRUD & processing | `batches[]`, `activeBatch`, `candidates[]`, `biasReport`, `fetchBatches()`, `pollBatches()`, `createBatch()`, `deleteBatch()` |
+| `useDashboardStore` | Dashboard UI state | `selectedView`, `comparisonMode`, `showAnonymized`, `setView()`, `toggleComparison()`, `toggleAnonymized()` |
 
 ### 14.2 Polling System
 
-- **Interval**: 3-second polling during active processing
+- **Interval**: 2-second polling during active processing
 - **Mechanism**: `setInterval` in `useEffect` with cleanup on unmount
 - **Silent updates**: State replaces in-place without UI flickering
 - **Auto-stop**: Polling ceases when all batches reach terminal status (`COMPLETE` / `FAILED`)
@@ -809,12 +809,19 @@ src/app/
 │   └── page.tsx                           ← Auth (login/signup/forgot-password)
 ├── about/
 │   └── page.tsx                           ← About/team page
+├── privacy/
+│   └── page.tsx                           ← Privacy policy page
 ├── components/
 │   ├── ui/
 │   │   ├── RevealOnScroll.tsx             ← IntersectionObserver wrapper
-│   │   └── SectionHeader.tsx              ← Eyebrow + H2 + subtitle
+│   │   ├── SectionHeader.tsx              ← Eyebrow + H2 + subtitle
+│   │   ├── ScrollProgress.tsx             ← Page reading progress bar
+│   │   ├── ParticleBackground.tsx         ← Canvas particle effects
+│   │   └── index.ts                       ← Barrel exports
+│   ├── AuthProvider.tsx                   ← Firebase auth state provider
 │   ├── Header.tsx                         ← Sticky pill navbar + mobile menu + account dropdown
 │   ├── Hero.tsx                           ← 2-col hero with animated counters + mockup
+│   ├── SocialProof.tsx                    ← Scrolling logo marquee
 │   ├── HowItWorks.tsx                     ← Auto-cycling 3-phase pipeline + preview panel
 │   ├── Features.tsx                       ← 6-card 3D tilt feature grid
 │   ├── SDGImpact.tsx                      ← UN SDG cards with expanding stats
@@ -824,14 +831,19 @@ src/app/
     ├── layout.tsx                         ← Sidebar nav + auth guard + responsive shell
     ├── page.tsx                           ← Dashboard orchestrator + polling + view routing
     ├── components/
+    │   ├── DashboardHeader.tsx            ← Welcome message + New Batch CTA
     │   ├── StatsRow.tsx                   ← 3 animated KPI stat cards
+    │   ├── BatchList.tsx                  ← Batch list container
     │   ├── BatchCard.tsx                  ← Expandable batch card + pipeline progress
+    │   ├── CandidateList.tsx              ← Candidate list with toggle
     │   ├── CandidateCard.tsx              ← Individual candidate result card
     │   ├── BiasReportView.tsx             ← Full bias analysis with charts
     │   ├── FairnessScoreCard.tsx          ← SVG ring score visualization
     │   ├── DistributionChart.tsx          ← Recharts bar chart wrapper
     │   ├── CreateBatchModal.tsx           ← Multi-step batch creation modal
-    │   └── EmptyState.tsx                 ← No-data placeholder with CTA
+    │   ├── EmptyState.tsx                 ← No-data placeholder with CTA
+    │   ├── LoadingState.tsx               ← Skeleton shimmer loading
+    │   └── index.ts                       ← Barrel exports
     └── hooks/
         ├── useScrollReveal.ts             ← Scroll-triggered reveal + stagger helper
         └── useAnimatedCounter.ts          ← rAF-powered number animation

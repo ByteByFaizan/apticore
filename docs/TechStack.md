@@ -76,6 +76,7 @@ Used in the Bias Report tab to render:
 | `SDGImpact.tsx` | UN SDG alignment: Goal 5 (Gender Equality), Goal 8 (Decent Work), Goal 10 (Reduced Inequalities) |
 | `FinalCTA.tsx` | "Ready to Make Hiring Fair?" call-to-action with sign-up button |
 | `Footer.tsx` | Product/company links, team social profiles (LinkedIn, GitHub) with interactive mobile dropdowns |
+| `SocialProof.tsx` | Scrolling logo marquee — animated trust badges of forward-thinking organizations |
 | `AuthProvider.tsx` | React context wrapper for Firebase auth state |
 
 **UI Primitives** (`src/app/components/ui/`):
@@ -115,6 +116,7 @@ Used in the Bias Report tab to render:
 |-------|------|------|-------------|
 | `/` | SSR | Public | Landing page (Hero, How It Works, Features, SDG, CTA, Footer) |
 | `/about` | SSR | Public | Team bios, mission statement, core principles |
+| `/privacy` | SSR | Public | Privacy policy — data handling, AI processing, user rights |
 | `/login` | CSR | Public | Email/password + Google OAuth, sign-up toggle, remember me |
 | `/forgot-password` | CSR | Public | Email-based password reset flow |
 | `/auth/action` | CSR | Public | Firebase auth action handler (email verify, password reset callbacks) |

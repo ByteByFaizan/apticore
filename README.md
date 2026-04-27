@@ -109,7 +109,7 @@ Multi-layer defense: Edge CORS, CSRF protection, token-bucket rate limiting, Zod
 │  GET  /api/batch/[id]       ← Get batch details + candidates     │
 │  DELETE /api/batch/delete   ← Delete a batch                     │
 │  GET  /api/user/profile     ← Get user profile                   │
-│  POST /api/user/profile     ← Update user profile                │
+│  PUT  /api/user/profile     ← Update user profile                │
 │  GET  /api/health           ← Health check                       │
 └────────────────────────┬─────────────────────────────────────────┘
                          │
@@ -250,20 +250,33 @@ apticore/
 │   │   │   ├── layout.tsx                        # Sidebar nav + auth guard
 │   │   │   ├── page.tsx                          # Dashboard orchestrator + polling
 │   │   │   ├── components/                       # Dashboard UI components
+│   │   │   │   ├── DashboardHeader.tsx           # Welcome message + New Batch CTA
 │   │   │   │   ├── StatsRow.tsx                  # Animated KPI stat cards
+│   │   │   │   ├── BatchList.tsx                 # Batch list container
 │   │   │   │   ├── BatchCard.tsx                 # Batch card + pipeline progress
+│   │   │   │   ├── CandidateList.tsx             # Candidate list with toggle
 │   │   │   │   ├── CandidateCard.tsx             # Candidate result card
 │   │   │   │   ├── BiasReportView.tsx            # Bias analysis dashboard
 │   │   │   │   ├── FairnessScoreCard.tsx         # SVG ring visualization
 │   │   │   │   ├── DistributionChart.tsx         # Recharts bar chart
 │   │   │   │   ├── CreateBatchModal.tsx          # Batch creation wizard
-│   │   │   │   └── EmptyState.tsx                # No-data placeholder
+│   │   │   │   ├── EmptyState.tsx                # No-data placeholder
+│   │   │   │   ├── LoadingState.tsx              # Skeleton shimmer loading
+│   │   │   │   └── index.ts                      # Barrel exports
 │   │   │   └── hooks/                            # Dashboard-specific hooks
 │   │   │       ├── useScrollReveal.ts            # Scroll-triggered animations
 │   │   │       └── useAnimatedCounter.ts         # Number animation
 │   │   ├── components/                           # Shared UI components
+│   │   │   ├── ui/                               # UI primitives
+│   │   │   │   ├── RevealOnScroll.tsx            # IntersectionObserver wrapper
+│   │   │   │   ├── SectionHeader.tsx             # Eyebrow + H2 + subtitle
+│   │   │   │   ├── ScrollProgress.tsx            # Page reading progress bar
+│   │   │   │   ├── ParticleBackground.tsx        # Canvas particle effects
+│   │   │   │   └── index.ts                      # Barrel exports
+│   │   │   ├── AuthProvider.tsx                  # Firebase auth state provider
 │   │   │   ├── Header.tsx                        # Navbar + mobile menu + auth dropdown
 │   │   │   ├── Hero.tsx                          # Landing hero section
+│   │   │   ├── SocialProof.tsx                   # Scrolling logo marquee
 │   │   │   ├── Features.tsx                      # 3D tilt feature grid
 │   │   │   ├── HowItWorks.tsx                    # Auto-cycling pipeline demo
 │   │   │   ├── SDGImpact.tsx                     # UN SDG impact cards
@@ -276,8 +289,10 @@ apticore/
 │   │       │   ├── process/                      # POST — Trigger AI pipeline
 │   │       │   ├── list/                         # GET  — List batches
 │   │       │   ├── [batchId]/                    # GET  — Batch details
+│   │       │   │   ├── candidates/               # GET  — Ranked candidates
+│   │       │   │   └── bias-report/              # GET  — Bias report
 │   │       │   └── delete/                       # DELETE — Remove batch
-│   │       ├── user/profile/                     # GET/POST — User profile
+│   │       ├── user/profile/                     # GET/PUT — User profile
 │   │       └── health/                           # GET — Health check
 │   ├── lib/                                      # Core business logic
 │   │   ├── gemini.ts                             # AI parsing, extraction, explanation (temp=0, Zod validated)
@@ -331,6 +346,8 @@ All API routes return a standardized JSON envelope:
 | `POST` | `/api/batch/process` | Yes | Trigger the 9-step AI processing pipeline |
 | `GET` | `/api/batch/list` | Yes | List all batches for the authenticated user |
 | `GET` | `/api/batch/[batchId]` | Yes | Get batch details including candidates & bias report |
+| `GET` | `/api/batch/[batchId]/candidates` | Yes | Get ranked candidate results (supports `?view=anonymized`) |
+| `GET` | `/api/batch/[batchId]/bias-report` | Yes | Get before/after bias analysis report |
 | `DELETE` | `/api/batch/delete` | Yes | Delete a batch and all associated data |
 
 ### User Operations
@@ -338,7 +355,7 @@ All API routes return a standardized JSON envelope:
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | `GET` | `/api/user/profile` | Yes | Retrieve user profile data |
-| `POST` | `/api/user/profile` | Yes | Update user profile |
+| `PUT` | `/api/user/profile` | Yes | Update user profile |
 
 ### System
 
@@ -408,7 +425,7 @@ AptiCore implements defense-in-depth with multiple security layers:
 | **Validation** | Zod Schemas | All request bodies validated against strict schemas |
 | **Auth** | Firebase Auth | JWT verification on every protected route |
 | **Database** | Firestore Rules | Owner-based access; server-only writes for processing data |
-| **Storage** | Storage Rules | File type restrictions (PDF/DOCX/TXT), 5MB max, owner-only access |
+| **Storage** | Storage Rules | File type restrictions (PDF/DOCX), 10MB max, owner-only access |
 | **Headers** | Security Headers | CSP, HSTS, X-Frame-Options, X-Content-Type-Options via `next.config.ts` |
 
 ---
