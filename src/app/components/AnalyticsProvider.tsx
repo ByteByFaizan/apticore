@@ -1,27 +1,47 @@
 "use client";
 
-import { useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { Suspense, useEffect, useRef } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { getFirebaseAnalytics, logAnalyticsEvent } from "@/lib/firebase-analytics";
 
 /**
- * Initialises Firebase Analytics on mount and logs page_view
- * events on every route change. Renders nothing visible.
+ * Inner component that does the actual tracking.
+ * Separated so it can be wrapped in Suspense (required by useSearchParams in Next.js 15).
  */
-export default function AnalyticsProvider() {
+function AnalyticsTracker() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isFirstRender = useRef(true);
 
-  // Initialise analytics on first client render
+  // Initialise analytics once on mount
   useEffect(() => {
     getFirebaseAnalytics();
   }, []);
 
-  // Log page_view on route changes
+  // Log page_view on client-side navigations (skip initial — SDK handles it)
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
     logAnalyticsEvent("page_view", {
       page_path: pathname,
+      page_search: searchParams.toString(),
     });
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   return null;
+}
+
+/**
+ * Wraps AnalyticsTracker in Suspense to satisfy Next.js 15's
+ * requirement for useSearchParams.
+ */
+export default function AnalyticsProvider() {
+  return (
+    <Suspense fallback={null}>
+      <AnalyticsTracker />
+    </Suspense>
+  );
 }
